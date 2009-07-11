@@ -1,18 +1,16 @@
+'''
+provide to_utc(datetime)->datetime and to_local(datetime)->datetime
+the purpose is to enable all code to dump datetime objects to yaml in UTC time
+and load them into local time
+'''
 import datetime
-import math
+import time
 
 
-def to_utc_offset():
-    herenow = datetime.datetime.now()
-    utcnow = datetime.datetime.utcnow()
-    seconds = int(10 * math.floor((utcnow - herenow).seconds / 10.0))
-    return datetime.timedelta(0, seconds)
-
-to_utc_offset = to_utc_offset()
-to_local_offset = -to_utc_offset
+_to_utc_offset = datetime.timedelta(0, time.timezone)
 
 def to_utc(dt):
-    return dt + to_utc_offset
+    return dt + _to_utc_offset
 
 def to_local(dt):
-    return dt + to_local_offset
+    return dt - _to_utc_offset

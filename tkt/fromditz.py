@@ -10,12 +10,12 @@ import yaml
 class UTCTimestampSwitcher(object):
     def timestamps_to_local(self):
         if hasattr(self, "creation_time"):
-            self.creation_time += tkt.timezones.to_local_offset
+            self.creation_time = tkt.timezones.to_local(self.creation_time)
 
         if isinstance(getattr(self, "log_events", 0), list):
             for group in self.log_events:
                 if isinstance(group[0], datetime.datetime):
-                    group[0] += tkt.timezones.to_local_offset
+                    group[0] = tkt.timezones.to_local(group[0])
 
         if isinstance(getattr(self, "components", 0), list):
             for component in self.components:
@@ -29,12 +29,12 @@ class UTCTimestampSwitcher(object):
 
     def timestamps_to_utc(self):
         if hasattr(self, "creation_time"):
-            self.creation_time += tkt.timezones.to_utc_offset
+            self.creation_time = tkt.timezones.to_utc(self.creation_time)
 
         if isinstance(getattr(self, "log_events", 0), list):
             for group in self.log_events:
                 if isinstance(group[0], datetime.datetime):
-                    group[0] += tkt.timezones.to_utc_offset
+                    group[0] = tkt.timezones.to_utc(group[0])
 
         if isinstance(getattr(self, "components", 0), list):
             for component in self.components:
