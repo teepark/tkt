@@ -1,0 +1,43 @@
+--- !ditz.rubyforge.org,2008-03-06/issue 
+title: command structure
+desc: |-
+  create a command base class that:
+   - builds an optparse.OptionParser based on overridden subclass attributes
+   - has a MetaClass that registers subclasses by name (lowercase name, actually)
+   - has a main() that calls the main() of the proper subclass
+type: :feature
+component: tkt
+release: "0.1"
+reporter: Travis Parker <travis.parker@gmail.com>
+status: :closed
+disposition: :fixed
+creation_time: 2009-07-10 02:46:33.244603 Z
+references: []
+
+id: b611ba688bd6c67d208d0783a8601634d76adf48
+log_events: 
+- - 2009-07-10 02:46:33.245438 Z
+  - Travis Parker <travis.parker@gmail.com>
+  - created
+  - ""
+- - 2009-07-11 07:40:58.791524 Z
+  - Travis Parker <travis.parker@gmail.com>
+  - changed status from unstarted to in_progress
+  - ""
+- - 2009-07-11 07:44:12.441157 Z
+  - Travis Parker <travis.parker@gmail.com>
+  - commented
+  - |-
+    tkt.commands.Command now uses tkt.plugins.MetaPluggable as its metaclass,
+    but MetaPluggable isn't written yet (and is part of a ticket #6)
+- - 2009-07-11 08:10:43.713572 Z
+  - Travis Parker <travis.parker@gmail.com>
+  - closed with disposition fixed
+  - |-
+    the top-level main() isn't attached to Command, it's just in the commands module
+    
+    also, Command no longer depends on an unwritten class, I just made the metaclass right there
+git_branch: 
+claimer: 
+labels: []
+

@@ -1,0 +1,9 @@
+*.pyc
+*.pyo
+.*.swp
+.ditz-plugins
+.ditz-config
+tkt.egg-info/*
+MANIFEST.in
+build/*
+dist/*
