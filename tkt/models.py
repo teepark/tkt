@@ -121,7 +121,7 @@ class Issue(Model):
         "id",
         "title",
         "description",
-        "creationtime",
+        "created",
         "type",
         "status",
         "resolution",
@@ -140,6 +140,9 @@ class Project(Model):
 
     def __init__(self, data):
         super(Project, self).__init__(data)
+        for i, issue in list(enumerate(self.issues)):
+            if not isinstance(issue, Issue):
+                self.issues[i] = Issue(issue)
 
     @classmethod
     def load(cls, stream):
