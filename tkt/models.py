@@ -3,6 +3,7 @@ import stat
 import subprocess
 
 import tkt.files
+import tkt.flextime
 import tkt.timezones
 import yaml
 
@@ -44,6 +45,15 @@ class Model(object):
         data = self.yamlable()
         self.timezones_to_local()
         return yaml.dump(data, stream=stream, default_flow_style=False)
+
+    def view_one_char(self):
+        return "?"
+
+    def view_one_line(self):
+        return "not implemented"
+
+    def view_detail(self):
+        return "not implemented"
 
 class Configuration(Model):
     fields = ['username', 'useremail', 'datafolder']
@@ -134,6 +144,45 @@ class Issue(Model):
 
     def timezones_to_local(self):
         this.creationtime = tkt.timezones.to_local(this.creationtime)
+
+    def view_one_char(self):
+        for char, status in self.statuses:
+            if self.status == status:
+                return char
+        return "?"
+
+    def view_one_line(self):
+        return "%s %s: %s" % (
+            self.view_one_char(),
+            ("#%d" % self.name).rjust(self.longestname),
+            self.title)
+
+    def view_detail(self):
+        created = tkt.flextime.since(self.created)
+        return '''Issue #%s
+%s
+    Title: %s
+    Description:
+  %s
+    Creator: %s
+    Age : %s
+    Type: %s
+    Status: %s%s
+    Identifier: %s
+
+Event Log:
+%s
+''' % (
+            self.name,
+            '-' * (len(str(self.name)) + 7),
+            self.title,
+            "\n  ".join(self.description.splitlines()),
+            self.creator,
+            created,
+            self.type,
+            self.status,
+            self.id,
+            "\n".join(e.view_detail() for e in self.events))
 
 class Project(Model):
     fields = ["name", "issues"]
