@@ -7,8 +7,8 @@ type: :feature
 component: tkt
 release: "0.1"
 reporter: Travis Parker <travis.parker@gmail.com>
-status: :unstarted
-disposition: 
+status: :closed
+disposition: :fixed
 creation_time: 2009-07-11 08:12:40.235580 Z
 references: []
 
@@ -24,6 +24,10 @@ log_events:
   - |-
     code to do this hasn't been written, but the API is in use
     tkt.flextime.since(datetime) -> string
+- - 2009-07-12 05:58:38.343118 Z
+  - Travis Parker <travis.parker@gmail.com>
+  - closed with disposition fixed
+  - ""
 git_branch: 
 claimer: 
 labels: []
