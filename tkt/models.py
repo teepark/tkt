@@ -1,3 +1,4 @@
+import functools
 import operator
 import os
 import stat
@@ -11,6 +12,7 @@ import yaml
 
 class Model(object):
     def __init__(self, data):
+        data = data or {}
         for field in self.fields:
             self.__dict__.setdefault(field, None)
 
@@ -27,7 +29,8 @@ class Model(object):
     fields = []
 
     def yamlable(self):
-        data = dict(zip(self.fields, map(self.__getattr__, self.fields)))
+        getter = functools.partial(getattr, self)
+        data = dict(zip(self.fields, map(getter, self.fields)))
         for k, v in data.items():
             if isinstance(v, Model):
                 data[k] = v.yamlable()
@@ -70,7 +73,7 @@ class Configuration(Model):
                         getattr(self, "default_%s" % fieldname)())
 
     @classmethod
-    def _find(cls, name):
+    def _find(cls, name, searchhome=False):
         path = os.path.abspath(os.curdir)
         parentpath = os.path.abspath(os.path.join(path, os.pardir))
 
@@ -88,27 +91,32 @@ class Configuration(Model):
             if os.path.exists(rcpath):
                 return rcpath, True
 
-        homedir = os.environ.get('HOME')
-        if not homedir:
-            raise RuntimeError("no %s or HOME directory found" % name)
+        if searchhome:
+            homedir = os.environ.get('HOME')
+            if not homedir:
+                raise RuntimeError("no %s or HOME directory found" % name)
 
-        rcpath = os.path.abspath(os.path.join(homedir, name))
-        return rcpath, os.path.exists(rcpath)
+            rcpath = os.path.abspath(os.path.join(homedir, name))
+            return rcpath, os.path.exists(rcpath)
+        return None, False
 
     @classmethod
     def rcfile(cls):
-        rcfile, present = cls._find(cls.RCFILENAME)
+        rcfile, present = cls._find(cls.RCFILENAME, searchhome=True)
         if not present:
+            rcfile = os.path.abspath(os.path.join('.', cls.RCFILENAME))
             os.mknod(rcfile, 0644, stat.S_IFREG)
         return rcfile
 
     @property
     def datapath(self):
         if not hasattr(self, "_datapath"):
-            rc, present = cls._find(self.datafolder)
+            folder, present = self._find(self.datafolder)
             if not present:
-                os.mkdir(rc)
-            self._datapath = rc
+                folder = os.path.abspath(os.path.join('.',
+                        self.DEFAULT_DATAFOLDER))
+                os.mkdir(folder)
+            self._datapath = folder
         return self._datapath
 
     def default_username(self):
@@ -156,6 +164,20 @@ class Issue(Model):
         "events",
     ]
 
+    types = [
+        ("b", "bugfix"),
+        ("f", "feature"),
+        ("t", "task"),
+    ]
+
+    @classmethod
+    def types_text(cls):
+        text = []
+        for char, name in cls.types:
+            index = name.find(char)
+            text.append("%s(%s)%s" % (name[:index], char, name[index + 1:]))
+        return ", ".join(text)
+
     statuses = [
         ("x", "closed"),
         ("q", "being verified"),
@@ -186,7 +208,7 @@ class Issue(Model):
 
         self.events.sort(key=operator.attrgetter("created"))
 
-    def dump(self, stream):
+    def dump(self, stream=None):
         fullevents = self.events
         self.events = [e.id for e in fullevents]
         data = super(Issue, self).dump(stream)
@@ -194,12 +216,12 @@ class Issue(Model):
         return data
 
     def timezones_to_utc(self):
-        this.creationtime = tkt.timezones.to_utc(this.creationtime)
+        self.created = tkt.timezones.to_utc(self.created)
         for event in self.events:
             event.timezones_to_utc()
 
     def timezones_to_local(self):
-        this.creationtime = tkt.timezones.to_local(this.creationtime)
+        self.created = tkt.timezones.to_local(self.created)
         for event in self.events:
             event.timezones_to_local()
 
@@ -240,7 +262,10 @@ Event Log:
             self.type,
             self.status,
             self.id,
-            "\n".join(e.view_detail() for e in self.events))
+            self.event_log())
+
+    def event_log(self):
+        return "\n".join(e.view_detail() for e in self.events)
 
 class Project(Model):
     fields = ["name", "issues"]

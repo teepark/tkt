@@ -2,4 +2,6 @@ import tkt.models
 import yaml
 
 
-config = tkt.models.Configuration.load(tkt.models.Configuration.rcfile())
+_path = tkt.models.Configuration.rcfile()
+
+config = tkt.models.Configuration.load(open(_path))
