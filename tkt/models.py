@@ -1,3 +1,4 @@
+import operator
 import os
 import stat
 import subprocess
@@ -126,6 +127,22 @@ class Configuration(Model):
     def default_datafolder(self):
         return self.DEFAULT_DATAFOLDER
 
+class Event(Model):
+    fields = [
+        "id",
+        "title",
+        "created",
+        "creator",
+        "comment",
+    ]
+
+    def view_detail(self):
+        return "- %s (%s, %s)\n  > %s" % (
+            self.title,
+            self.creator,
+            tkt.flextime.since(self.created),
+            "\n  > ".join(self.comment.splitlines()))
+
 class Issue(Model):
     fields = [
         "id",
@@ -139,11 +156,52 @@ class Issue(Model):
         "events",
     ]
 
+    statuses = [
+        ("x", "closed"),
+        ("q", "being verified"),
+        ("_", "open"),
+        ("=", "paused"),
+        (">", "in progress"),
+    ]
+
+    resolutions = [
+        ("1", "fixed"),
+        ("2", "won't fix"),
+        ("3", "invalid"),
+    ]
+
+    def __init__(self, data):
+        super(Issue, self).__init__(data)
+
+        events = []
+        for eventid in self.events:
+            fp = open(tkt.files.event_filename(self.id, eventid))
+            try:
+                event = Event.load(fp)
+            finally:
+                fp.close()
+            event.issue = self
+            events.append(event)
+        self.events = events
+
+        self.events.sort(key=operator.attrgetter("created"))
+
+    def dump(self, stream):
+        fullevents = self.events
+        self.events = [e.id for e in fullevents]
+        data = super(Issue, self).dump(stream)
+        self.events = fullevents
+        return data
+
     def timezones_to_utc(self):
         this.creationtime = tkt.timezones.to_utc(this.creationtime)
+        for event in self.events:
+            event.timezones_to_utc()
 
     def timezones_to_local(self):
         this.creationtime = tkt.timezones.to_local(this.creationtime)
+        for event in self.events:
+            event.timezones_to_local()
 
     def view_one_char(self):
         for char, status in self.statuses:
@@ -189,15 +247,19 @@ class Project(Model):
 
     def __init__(self, data):
         super(Project, self).__init__(data)
-        for i, issue in list(enumerate(self.issues)):
-            if not isinstance(issue, Issue):
-                self.issues[i] = Issue(issue)
 
-    @classmethod
-    def load(cls, stream):
-        super(Project, cls).load(stream)
-        self.issues = [Issue.load(tkt.files.filename('issue', i['id']))
-                       for i in self.issues]
+        issues = []
+        for issueid in self.issues:
+            fp = open(tkt.files.issue_filename(issueid))
+            try:
+                issues.append(Issue.load(fp))
+            finally:
+                fp.close()
+        self.issues = issues
+
+        self.issues.sort(key=operator.attrgetter("created"))
+        for i, issue in enumerate(self.issues):
+            self.issues[i].name = str(i)
 
     def dump(self, stream=None):
         fullissues = self.issues

@@ -18,6 +18,12 @@ log_events:
   - Travis Parker <travis.parker@gmail.com>
   - created
   - ""
+- - 2009-07-12 05:16:13.934513 Z
+  - Travis Parker <travis.parker@gmail.com>
+  - commented
+  - |-
+    code to do this hasn't been written, but the API is in use
+    tkt.flextime.since(datetime) -> string
 git_branch: 
 claimer: 
 labels: []
