@@ -1,5 +1,6 @@
+import collections
 import datetime
-import hashlib
+import operator
 import optparse
 import os
 import random
@@ -18,7 +19,7 @@ DEFAULT = "todo"
 def main():
     import tkt.plugins
     arg = len(sys.argv) > 1 and sys.argv[1] or DEFAULT
-    cmd = Command._get_cmd(arg)
+    cmd = Command.cmds.get(arg)
     if cmd is None:
         sys.stderr.write("unknown tkt command: %s\n" % arg)
         sys.exit(1)
@@ -27,7 +28,7 @@ def main():
 def aliases(*names):
     def decorator(cls):
         for name in names:
-            Command.cmds[name.lower()] = cls
+            Command.cmds[name.replace("_", "-").lower()] = cls
         return cls
     return decorator
 
@@ -36,7 +37,7 @@ class CommandTracker(type):
         if not hasattr(cls, 'cmds'):
             cls.cmds = {}
         else:
-            cls.cmds[cls.__name__.lower()] = cls
+            cls.cmds[cls.__name__.replace("_", "-").lower()] = cls
 
 class Command(object):
     __metaclass__ = CommandTracker
@@ -178,10 +179,6 @@ Enter your text above. Lines starting with a '#' will be ignored."""
 
         return parser
 
-    @classmethod
-    def _get_cmd(cls, name):
-        return cls.cmds.get(name.replace('-', '_'))
-
 class Add(Command):
     options = [
         {
@@ -258,14 +255,34 @@ class Help(Command):
 
     def main(self):
         if not self.parsed_args:
-            sys.stderr.write("command argument required\n")
-            sys.exit(1)
+            print "Commands (use 'tkt help <cmd>' to see more detail)"
+            print self.list_args()
+            sys.exit()
         arg = self.parsed_args[0]
-        cmd = self._get_cmd(arg)
+        cmd = self.cmds.get(arg)
         if cmd is None:
             sys.stderr.write("unknown tkt command: %s\n" % arg)
             sys.exit(1)
         cmd()._build_parser().print_help()
+
+    def list_args(self):
+        cmds = {}
+        for key, cmd in self.cmds.iteritems():
+            cmds.setdefault(cmd, []).append(key)
+
+        for cmd, names in cmds.items():
+            cmds[cmd] = "/".join(sorted(names))
+
+        output = []
+        groups = sorted(cmds.iteritems(), key=operator.itemgetter(1))
+        longest = max(len(pair[1]) for pair in groups)
+        for cmd, names in groups:
+            if hasattr(cmd, "usageinfo"):
+                output.append("%s : %s" % (names.ljust(longest), cmd.usageinfo))
+            else:
+                output.append(names)
+
+        return "\n".join(output)
 
 aliases('man', 'info')(Help)
 
