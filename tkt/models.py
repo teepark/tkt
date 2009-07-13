@@ -79,7 +79,7 @@ class Configuration(Model):
 
         rcpath = os.path.join(path, name)
         if os.path.exists(rcpath):
-            return rcpath, True
+            return rcpath
 
         # the theory is that once we reach the root, the parent folder's path
         # is the same as the current folder's path
@@ -89,21 +89,22 @@ class Configuration(Model):
 
             rcpath = os.path.join(path, name)
             if os.path.exists(rcpath):
-                return rcpath, True
+                return rcpath
 
         if searchhome:
             homedir = os.environ.get('HOME')
             if not homedir:
-                raise RuntimeError("no %s or HOME directory found" % name)
+                return None
 
             rcpath = os.path.abspath(os.path.join(homedir, name))
-            return rcpath, os.path.exists(rcpath)
-        return None, False
+            if os.path.exists(rcpath):
+                return rcpath
+        return None
 
     @classmethod
     def rcfile(cls):
-        rcfile, present = cls._find(cls.RCFILENAME, searchhome=True)
-        if not present:
+        rcfile = cls._find(cls.RCFILENAME, searchhome=True)
+        if not rcfile:
             rcfile = os.path.abspath(os.path.join('.', cls.RCFILENAME))
             os.mknod(rcfile, 0644, stat.S_IFREG)
         return rcfile
@@ -111,8 +112,8 @@ class Configuration(Model):
     @property
     def datapath(self):
         if not hasattr(self, "_datapath"):
-            folder, present = self._find(self.datafolder)
-            if not present:
+            folder = self._find(self.datafolder)
+            if not folder:
                 folder = os.path.abspath(os.path.join('.',
                         self.DEFAULT_DATAFOLDER))
                 os.mkdir(folder)
