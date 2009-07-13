@@ -18,9 +18,9 @@ DEFAULT = "todo"
 def main():
     import tkt.plugins
     arg = len(sys.argv) > 1 and sys.argv[1] or DEFAULT
-    cmd = Command.cmds.get(arg)
+    cmd = Command._get_cmd(arg)
     if cmd is None:
-        print "unknown tkt command: %s" % arg
+        sys.stderr.write("unknown tkt command: %s\n" % arg)
         sys.exit(1)
     cmd().main()
 
@@ -109,6 +109,43 @@ Enter your text above. Lines starting with a '#' will be ignored."""
 
         return "\n".join(l for l in text.splitlines() if not l.startswith("#"))
 
+    def store_new_issue(self, title, description, type, user):
+        issue = tkt.models.Issue({
+            'id': uuid.uuid4().hex,
+            'title': title,
+            'description': description,
+            'created': datetime.datetime.now(),
+            'type': dict(tkt.models.Issue.types)[type],
+            'status': 'open',
+            'resolution': None,
+            'creator': user,
+            'events': []})
+
+        issuepath = tkt.files.issue_filename(issue.id)
+        issuedir = os.path.abspath(os.path.join(issuepath, os.pardir))
+
+        if not os.path.exists(issuedir):
+            os.makedirs(issuedir)
+
+        fp = open(issuepath, 'w')
+        try:
+            issue.dump(fp)
+        finally:
+            fp.close()
+
+    def store_new_configuration(self, username, useremail, datafolder):
+        config = tkt.models.Configuration({
+            'username': username,
+            'useremail': useremail,
+            'datafolder': datafolder})
+
+        rcpath = self.configobj.rcfile()
+        fp = open(rcpath, 'w')
+        try:
+            config.dump(fp)
+        finally:
+            fp.close()
+
     def _build_parser(self):
         parser = optparse.OptionParser()
 
@@ -136,12 +173,19 @@ Enter your text above. Lines starting with a '#' will be ignored."""
         parser.usage = "tkt %s %s [options]" % (
                 self.__class__.__name__.lower(), self.usage)
 
+        if hasattr(self, "usageinfo"):
+            parser.usage += "\n%s" % self.usageinfo
+
         return parser
+
+    @classmethod
+    def _get_cmd(cls, name):
+        return cls.cmds.get(name.replace('-', '_'))
 
 class Add(Command):
     options = [
         {
-            'short': '-n',
+            'short': '-t',
             'long': '--title',
             'help': 'the title for the ticket',
         },
@@ -156,6 +200,8 @@ class Add(Command):
             'help': 'the creating user'
         }
     ]
+
+    usageinfo = "create a new ticket"
 
     def main(self):
         # delay doing this substitution until now in case
@@ -183,28 +229,96 @@ class Add(Command):
 
         description = self.editor_prompt()
 
-        issue = tkt.models.Issue({
-            'id': hashlib.sha1(uuid.uuid4().bytes).hexdigest(),
-            'title': title,
-            'description': description,
-            'created': datetime.datetime.now(),
-            'type': dict(tkt.models.Issue.types)[type],
-            'status': 'open',
-            'resolution': None,
-            'creator': user,
-            'events': []
-        })
+        self.store_new_issue(title, description, type, user)
 
-        issuepath = tkt.files.issue_filename(issue.id)
-        issuedir = os.path.abspath(os.path.join(issuepath, os.pardir))
+    def pipemain(self):
+        if not all(map(functools.partial(getattr, self.parsed_options),
+                ["user", "title", "type"])):
+            sys.stderr.write("required option(s) missing\n")
+            sys.exit(1)
 
-        if not os.path.exists(issuedir):
-            os.makedirs(issuedir)
+        user = self.parsed_options.user
 
-        fp = open(issuepath, 'w')
-        try:
-            issue.dump(fp)
-        finally:
-            fp.close()
+        title = self.parsed_options.title
+
+        typeoptions = set(pair[0] for pair in tkt.models.Issue.types)
+        type = self.parsed_options.type
+        if type not in typeoptions:
+            sys.stderr.write("bad issue type: %s\n" % type)
+            sys.exit(1)
+
+        description = self.stdin.read()
+
+        self.store_new_issue(title, description, type, user)
 
 aliases('new')(Add)
+
+class Help(Command):
+    usage = "command"
+
+    def main(self):
+        if not self.parsed_args:
+            sys.stderr.write("command argument required\n")
+            sys.exit(1)
+        arg = self.parsed_args[0]
+        cmd = self._get_cmd(arg)
+        if cmd is None:
+            sys.stderr.write("unknown tkt command: %s\n" % arg)
+            sys.exit(1)
+        cmd()._build_parser().print_help()
+
+aliases('man', 'info')(Help)
+
+class Init(Command):
+    options = [
+        {
+            'short': '-u',
+            'long': '--username',
+            'help': 'your name',
+        },
+        {
+            'short': '-e',
+            'long': '--useremail',
+            'help': 'your email address'
+        },
+        {
+            'short': '-f',
+            'long': '--foldername',
+            'help': 'name for the tkt data folder'
+        }
+    ]
+
+    def main(self):
+        self.configobj = tkt.models.Configuration(None)
+        super(Init, self).main()
+
+    def ttymain(self):
+        default_username = self.configobj.default_username()
+        username = self.parsed_options.username or \
+                self.prompt("Your Name [%s]:" % default_username) or \
+                default_username
+
+        default_email = self.configobj.default_useremail()
+        useremail = self.parsed_options.useremail or \
+                self.prompt("Your E-Mail [%s]:" % default_email) or \
+                default_useremail
+
+        default_folder = self.configobj.default_datafolder()
+        datafolder = self.parsed_options.foldername or \
+                self.prompt("tkt Data Folder [%s]:" % default_folder) or \
+                default_folder
+
+        self.store_new_configuration(username, useremail, datafolder)
+
+    def pipemain(self):
+        if not all(map(functools.partial(getattr, self.parsed_options),
+                ["username", "useremail", "foldername"])):
+            sys.stderr.write("mising required option(s)\n")
+            sys.exit(1)
+
+        self.store_new_configuration(
+            self.parsed_options.username,
+            self.parsed_options.useremail,
+            self.parsed_options.foldername)
+
+aliases('setup')(Init)
