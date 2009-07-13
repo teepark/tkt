@@ -7,3 +7,7 @@ tkt.egg-info/*
 MANIFEST.in
 build/*
 dist/*
+
+# for now
+.tktrc.yaml
+.tkt/*
