@@ -1,9 +1,11 @@
+import bisect
 import collections
 import datetime
 import operator
 import optparse
 import os
 import random
+import stat
 import subprocess
 import sys
 import tempfile
@@ -18,7 +20,10 @@ DEFAULT = "todo"
 
 def main():
     import tkt.plugins
-    arg = len(sys.argv) > 1 and sys.argv[1] or DEFAULT
+    if len(sys.argv) > 1 and sys.argv[1] and not sys.argv[1].startswith('-'):
+        arg = sys.argv[1]
+    else:
+        arg = DEFAULT
     cmd = Command.cmds.get(arg)
     if cmd is None:
         sys.stderr.write("unknown tkt command: %s\n" % arg)
@@ -56,9 +61,15 @@ class Command(object):
     # usage = "foo [bar]" -> "usage: tkt <commandname> foo [bar] [options]"
     usage = ""
 
-    argv = sys.argv[2:]
+    if len(sys.argv) > 1 and sys.argv[1] and not sys.argv[1].startswith('-'):
+        argv = sys.argv[2:]
+    else:
+        argv = sys.argv[1:]
 
     def main(self):
+        if hasattr(getattr(self, 'prepare_options', None), '__call__'):
+            self.prepare_options()
+
         if sys.stdin.isatty():
             self.ttymain()
         else:
@@ -82,14 +93,19 @@ class Command(object):
             self._options_args = self._build_parser().parse_args(self.argv)
         return self._options_args[1]
 
+    def username(self):
+        return "%s <%s>" % (tkt.config.config.username,
+                            tkt.config.config.useremail)
+
     def prompt(self, msg):
         print msg,
         return raw_input()
 
     def editor_prompt(self, message=None):
-        message = message or """Description
+        message = message or "Description"
 
-Enter your text above. Lines starting with a '#' will be ignored."""
+        message += "\n\nEnter your text above. Lines starting with a '#' " + \
+                "will be ignored."
         message = "\n## " + "\n## ".join(message.splitlines())
 
         temp = tempfile.mktemp()
@@ -110,7 +126,40 @@ Enter your text above. Lines starting with a '#' will be ignored."""
 
         return "\n".join(l for l in text.splitlines() if not l.startswith("#"))
 
-    def store_new_issue(self, title, description, type, user):
+    def fail(self, message):
+        sys.stderr.write(message + "\n")
+        sys.exit(1)
+
+    def require_all_options(self, exceptions=None):
+        required = set(o['long'][2:] for o in self.options).difference(
+                exceptions or ())
+        if not all(getattr(self.parsed_options, opt['long'][2:]) for opt in
+                self.options):
+            self.fail("missing required option(s)")
+
+    def load_project(self):
+        # also loads everything else:
+        #   all issues (from Project.__init__),
+        #   and all Events (from Issue.__init__)
+        filename = tkt.files.project_filename()
+
+        try:
+            fp = open(filename)
+        except IOError:
+            dirname = os.path.dirname(filename)
+            if not os.path.exists(dirname):
+                os.path.makedirs(dirname)
+            os.mknod(filename, 0644, stat.S_IFREG)
+            return tkt.models.Project({'issues': []})
+
+        try:
+            return tkt.models.Project.load(fp)
+        finally:
+            fp.close()
+
+    def store_new_issue(self, project, title, description, type, user):
+        project = project or self.load_project()
+
         issue = tkt.models.Issue({
             'id': uuid.uuid4().hex,
             'title': title,
@@ -122,17 +171,49 @@ Enter your text above. Lines starting with a '#' will be ignored."""
             'creator': user,
             'events': []})
 
+        bisect.insort(project.issues, issue)
+
         issuepath = tkt.files.issue_filename(issue.id)
         issuedir = os.path.abspath(os.path.join(issuepath, os.pardir))
 
         if not os.path.exists(issuedir):
             os.makedirs(issuedir)
 
-        fp = open(issuepath, 'w')
+        fp = open(tkt.files.project_filename(), 'w')
+        try:
+            project.dump(fp)
+        finally:
+            fp.close()
+
+        # this dumps the issue too
+        self.store_new_event(issue, "issue created", issue.created, user, "")
+
+        return issue
+
+    def store_new_event(self, issue, title, created, creator, comment):
+        event = tkt.models.Event({
+            'id': uuid.uuid4().hex,
+            'title': title,
+            'created': created,
+            'creator': creator,
+            'comment': comment,
+        })
+
+        bisect.insort(issue.events, event)
+
+        fp = open(tkt.files.issue_filename(issue.id), 'w')
         try:
             issue.dump(fp)
         finally:
             fp.close()
+
+        fp = open(tkt.files.event_filename(issue.id, event.id), 'w')
+        try:
+            event.dump(fp)
+        finally:
+            fp.close()
+
+        return event
 
     def store_new_configuration(self, username, useremail, datafolder):
         config = tkt.models.Configuration({
@@ -146,6 +227,8 @@ Enter your text above. Lines starting with a '#' will be ignored."""
             config.dump(fp)
         finally:
             fp.close()
+
+        return config
 
     def _build_parser(self):
         parser = optparse.OptionParser()
@@ -185,37 +268,25 @@ class Add(Command):
             'short': '-t',
             'long': '--title',
             'help': 'the title for the ticket',
+            'type': 'string',
         },
         {
             'short': '-p',
             'long': '--type',
-            'help': 'the type of ticket: %s'
+            'help': 'the type of ticket: %s',
+            'type': 'string',
         },
-        {
-            'short': '-u',
-            'long': '--user',
-            'help': 'the creating user'
-        }
     ]
 
     usageinfo = "create a new ticket"
 
-    def main(self):
+    def prepare_options(self):
         # delay doing this substitution until now in case
         # plugins wanted to add to the list of Issue types
         self.options[1]['help'] = self.options[1]['help'] % \
                 tkt.models.Issue.types_text()
 
-        super(Add, self).main()
-
     def ttymain(self):
-        defaultuser = "%s <%s>" % (tkt.config.config.username,
-                                   tkt.config.config.useremail)
-        user = self.parsed_options.user or \
-                self.prompt("Issue creator [%s]:" % defaultuser)
-        if not user:
-            user = defaultuser
-
         title = self.parsed_options.title or self.prompt("Title:")
 
         typeoptions = set(pair[0] for pair in tkt.models.Issue.types)
@@ -226,15 +297,10 @@ class Add(Command):
 
         description = self.editor_prompt()
 
-        self.store_new_issue(title, description, type, user)
+        self.store_new_issue(None, title, description, type, self.username())
 
     def pipemain(self):
-        if not all(map(functools.partial(getattr, self.parsed_options),
-                ["user", "title", "type"])):
-            sys.stderr.write("required option(s) missing\n")
-            sys.exit(1)
-
-        user = self.parsed_options.user
+        self.require_all_options()
 
         title = self.parsed_options.title
 
@@ -244,9 +310,9 @@ class Add(Command):
             sys.stderr.write("bad issue type: %s\n" % type)
             sys.exit(1)
 
-        description = self.stdin.read()
+        description = sys.stdin.read()
 
-        self.store_new_issue(title, description, type, user)
+        self.store_new_issue(None, title, description, type, self.username())
 
 aliases('new')(Add)
 
@@ -263,7 +329,10 @@ class Help(Command):
         if cmd is None:
             sys.stderr.write("unknown tkt command: %s\n" % arg)
             sys.exit(1)
-        cmd()._build_parser().print_help()
+        cmd = cmd()
+        if hasattr(getattr(cmd, "prepare_options"), "__call__"):
+            cmd.prepare_options()
+        cmd._build_parser().print_help()
 
     def list_args(self):
         cmds = {}
@@ -292,16 +361,25 @@ class Init(Command):
             'short': '-u',
             'long': '--username',
             'help': 'your name',
+            'type': 'string',
         },
         {
             'short': '-e',
             'long': '--useremail',
-            'help': 'your email address'
+            'help': 'your email address',
+            'type': 'string',
         },
         {
             'short': '-f',
             'long': '--foldername',
-            'help': 'name for the tkt data folder'
+            'help': 'name for the tkt data folder',
+            'type': 'string',
+        },
+        {
+            'short': '-p',
+            'long': '--projectname',
+            'help': 'name of the tracked project',
+            'type': 'string',
         }
     ]
 
@@ -325,13 +403,24 @@ class Init(Command):
                 self.prompt("tkt Data Folder [%s]:" % default_folder) or \
                 default_folder
 
+        default_project = os.path.basename(os.path.abspath('.'))
+        projectname = self.parsed_options.projectname or\
+                self.prompt("Project Name [%s]:" % default_project) or\
+                default_project
+
         self.store_new_configuration(username, useremail, datafolder)
 
+        project = self.load_project()
+        project.name = projectname
+
+        fp = open(tkt.files.project_filename(), 'w')
+        try:
+            project.dump(fp)
+        finally:
+            fp.close()
+
     def pipemain(self):
-        if not all(map(functools.partial(getattr, self.parsed_options),
-                ["username", "useremail", "foldername"])):
-            sys.stderr.write("mising required option(s)\n")
-            sys.exit(1)
+        self.require_all_options()
 
         self.store_new_configuration(
             self.parsed_options.username,
@@ -339,3 +428,129 @@ class Init(Command):
             self.parsed_options.foldername)
 
 aliases('setup')(Init)
+
+class Todo(Command):
+
+    options = [{
+        'short': '-c',
+        'long': '--show-closed',
+        'help': 'also show closed tickets',
+    }]
+
+    def ttymain(self):
+        project = self.load_project()
+        for issue in project.issues:
+            if self.parsed_options.show_closed or issue.status != "closed":
+                print issue.view_one_line()
+
+    pipemain = ttymain
+
+class Show(Command):
+    usage = "ticket"
+    def ttymain(self):
+        if not self.parsed_args and self.parsed_args[0]:
+            self.fail("a ticket to show is required")
+
+        tktname = self.parsed_args[0]
+        for issue in self.load_project().issues:
+            if tktname in issue.valid_names:
+                break
+        else:
+            self.fail("no ticket found with name %s" % tktname)
+
+        print issue.view_detail()
+
+    pipemain = ttymain
+
+aliases('view')(Show)
+
+class Close(Command):
+    usage = 'ticket'
+
+    options = [{
+        'short': '-r',
+        'long': '--resolution',
+        'help': 'how the ticket was resolved: %s',
+        'type': 'int',
+    }]
+
+    def prepare_options(self):
+        self.options[0]['help'] = self.options[0]['help'] % \
+                tkt.models.Issue.resolutions_text()
+
+    def ttymain(self):
+        if not self.parsed_args and self.parsed_args[0]:
+            self.fail("a ticket to close is required")
+
+        tktname = self.parsed_args[0]
+        for issue in self.load_project().issues:
+            if tktname in issue.valid_names:
+                break
+        else:
+            self.fail("no ticket found with name %s" % tktname)
+
+        issue.status = "closed"
+
+        self.store_new_event(
+            issue,
+            "ticket closed",
+            datetime.datetime.now(),
+            self.username(),
+            self.editor_prompt("Comment"))
+
+    pipemain = ttymain
+
+aliases('finish', 'end')(Close)
+
+class Reopen(Command):
+    usage = 'ticket'
+
+    def ttymain(self):
+        if not self.parsed_args and self.parsed_args[0]:
+            self.fail("a ticket to reopen is required")
+
+        tktname = self.parsed_args[0]
+        for issue in self.load_project().issues:
+            if tktname in issue.valid_names:
+                break
+        else:
+            self.fail("no ticket found with name %s" % tktname)
+
+        if issue.status != "closed":
+            self.fail("ticket %s isn't closed, you dummy!" % tktname)
+
+        issue.status = "reopened"
+
+        self.store_new_event(
+            issue,
+            "ticket reopened",
+            datetime.datetime.now(),
+            self.username(),
+            self.editor_prompt("Comment"))
+
+    pipmain = ttymain
+
+class QA(Command):
+    usage = 'ticket'
+
+    def ttymain(self):
+        if not self.parsed_args and self.parsed_args[0]:
+            self.fail("a ticket to reopen is required")
+
+        tktname = self.parsed_args[0]
+        for issue in self.load_project().issues:
+            if tktname in issue.valid_names:
+                break
+        else:
+            self.fail("no ticket found with name %s" % tktname)
+
+        issue.status = "resolution in QA"
+
+        self.store_new_event(
+            issue,
+            "ticket sent to QA",
+            datetime.datetime.now(),
+            self.username(),
+            self.editor_prompt("Comment"))
+
+    pipemain = ttymain

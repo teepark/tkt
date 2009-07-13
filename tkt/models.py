@@ -145,12 +145,25 @@ class Event(Model):
         "comment",
     ]
 
+    def __lt__(self, other):
+        return self.created < other.created
+
+    def timezones_to_utc(self):
+        self.created = tkt.timezones.to_utc(self.created)
+
+    def timezones_to_local(self):
+        self.created = tkt.timezones.to_local(self.created)
+
     def view_detail(self):
-        return "- %s (%s, %s)\n  > %s" % (
+        if self.comment:
+            comment = "\n  > %s" % "\n  > ".join(self.comment.splitlines())
+        else:
+            comment = ""
+        return "- %s (%s, %s)%s" % (
             self.title,
             self.creator,
-            tkt.flextime.since(self.created),
-            "\n  > ".join(self.comment.splitlines()))
+            "%s ago" % tkt.flextime.since(self.created),
+            comment)
 
 class Issue(Model):
     fields = [
@@ -181,17 +194,22 @@ class Issue(Model):
 
     statuses = [
         ("x", "closed"),
-        ("q", "being verified"),
+        ("q", "resolution in QA"),
+        ("_", "reopened"),
         ("_", "open"),
         ("=", "paused"),
         (">", "in progress"),
     ]
 
     resolutions = [
-        ("1", "fixed"),
-        ("2", "won't fix"),
-        ("3", "invalid"),
+        (1, "fixed"),
+        (2, "won't fix"),
+        (3, "invalid"),
     ]
+
+    @classmethod
+    def resolutions_text(cls):
+        return ", ".join("(%d) %s" % pair for pair in cls.resolutions)
 
     def __init__(self, data):
         super(Issue, self).__init__(data)
@@ -207,7 +225,10 @@ class Issue(Model):
             events.append(event)
         self.events = events
 
-        self.events.sort(key=operator.attrgetter("created"))
+        self.events.sort()
+
+    def __lt__(self, other):
+        return self.created < other.created
 
     def dump(self, stream=None):
         fullevents = self.events
@@ -218,13 +239,9 @@ class Issue(Model):
 
     def timezones_to_utc(self):
         self.created = tkt.timezones.to_utc(self.created)
-        for event in self.events:
-            event.timezones_to_utc()
 
     def timezones_to_local(self):
         self.created = tkt.timezones.to_local(self.created)
-        for event in self.events:
-            event.timezones_to_local()
 
     def view_one_char(self):
         for char, status in self.statuses:
@@ -232,24 +249,32 @@ class Issue(Model):
                 return char
         return "?"
 
+    @property
+    def valid_names(self):
+        return set([self.name, self.id])
+
     def view_one_line(self):
         return "%s %s: %s" % (
             self.view_one_char(),
-            ("#%d" % self.name).rjust(self.longestname),
+            ("#%s" % self.name).rjust(self.longestname),
             self.title)
 
     def view_detail(self):
-        created = tkt.flextime.since(self.created)
+        created = "%s ago" % tkt.flextime.since(self.created)
+        description = self.description.splitlines()
+        if len(description) > 1:
+            description = "\n> %s" % "\n> ".join(description)
+        else:
+            description = description[0]
         return '''Issue #%s
 %s
-    Title: %s
-    Description:
-  %s
-    Creator: %s
-    Age : %s
-    Type: %s
-    Status: %s%s
-    Identifier: %s
+          Title: %s
+    Description: %s
+        Creator: %s
+            Age: %s
+           Type: %s
+         Status: %s
+     Identifier: %s
 
 Event Log:
 %s
@@ -257,7 +282,7 @@ Event Log:
             self.name,
             '-' * (len(str(self.name)) + 7),
             self.title,
-            "\n  ".join(self.description.splitlines()),
+            description,
             self.creator,
             created,
             self.type,
@@ -275,7 +300,7 @@ class Project(Model):
         super(Project, self).__init__(data)
 
         issues = []
-        for issueid in self.issues:
+        for issueid in self.issues or []:
             fp = open(tkt.files.issue_filename(issueid))
             try:
                 issues.append(Issue.load(fp))
@@ -283,9 +308,11 @@ class Project(Model):
                 fp.close()
         self.issues = issues
 
-        self.issues.sort(key=operator.attrgetter("created"))
+        self.issues.sort()
+        longestname = len(str(len(self.issues)))
         for i, issue in enumerate(self.issues):
             self.issues[i].name = str(i)
+            self.issues[i].longestname = longestname
 
     def dump(self, stream=None):
         fullissues = self.issues

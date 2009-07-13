@@ -18,5 +18,5 @@ def event_filename(issueid, eventid):
     import tkt.config
     return os.path.join(
             tkt.config.config.datapath,
-            issue.id,
+            issueid,
             "%s.yaml" % eventid)
