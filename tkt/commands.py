@@ -145,6 +145,12 @@ class Command(object):
                 self.options):
             self.fail("missing required option(s)")
 
+    @property
+    def project(self):
+        if not hasattr(self, "_project"):
+            self._project = self.load_project()
+        return self._project
+
     def load_project(self):
         # also loads everything else:
         #   all issues (from Project.__init__),
@@ -165,9 +171,7 @@ class Command(object):
         finally:
             fp.close()
 
-    def store_new_issue(self, project, title, description, type, user):
-        project = project or self.load_project()
-
+    def store_new_issue(self, title, description, type, user):
         issue = tkt.models.Issue({
             'id': uuid.uuid4().hex,
             'title': title,
@@ -179,7 +183,7 @@ class Command(object):
             'creator': user,
             'events': []})
 
-        bisect.insort(project.issues, issue)
+        bisect.insort(self.project.issues, issue)
 
         issuepath = tkt.files.issue_filename(issue.id)
         issuedir = os.path.abspath(os.path.join(issuepath, os.pardir))
@@ -189,7 +193,7 @@ class Command(object):
 
         fp = open(tkt.files.project_filename(), 'w')
         try:
-            project.dump(fp)
+            self.project.dump(fp)
         finally:
             fp.close()
 
@@ -306,7 +310,7 @@ class Add(Command):
 
         description = self.editor_prompt("Description")
 
-        self.store_new_issue(None, title, description, type, self.username())
+        self.store_new_issue(title, description, type, self.username())
 
     def pipemain(self):
         self.require_all_options()
@@ -321,7 +325,7 @@ class Add(Command):
 
         description = sys.stdin.read()
 
-        self.store_new_issue(None, title, description, type, self.username())
+        self.store_new_issue(title, description, type, self.username())
 
 aliases('new')(Add)
 
@@ -438,12 +442,11 @@ class Init(Command):
 
         self.store_new_configuration(username, useremail, datafolder, plugins)
 
-        project = self.load_project()
-        project.name = projectname
+        self.project.name = projectname
 
         fp = open(tkt.files.project_filename(), 'w')
         try:
-            project.dump(fp)
+            self.project.dump(fp)
         finally:
             fp.close()
 
@@ -467,12 +470,11 @@ class Todo(Command):
     usageinfo = "list tickets"
 
     def main(self):
-        project = self.load_project()
-        for issue in project.issues:
+        for issue in self.project.issues:
             if self.parsed_options.show_closed or issue.status != CLOSED:
                 print issue.view_one_line()
 
-        if not project.issues:
+        if not self.project.issues:
             if self.parsed_options.show_closed:
                 print "no issues"
             else:
@@ -488,7 +490,7 @@ class Show(Command):
             self.fail("a ticket to show is required")
 
         tktname = self.parsed_args[0]
-        for issue in self.load_project().issues:
+        for issue in self.project.issues:
             if tktname in issue.valid_names:
                 break
         else:
@@ -531,7 +533,7 @@ class Close(Command):
             self.fail("a ticket to close is required")
 
         tktname = self.parsed_args[0]
-        for issue in self.load_project().issues:
+        for issue in self.project.issues:
             if tktname in issue.valid_names:
                 break
         else:
@@ -559,7 +561,7 @@ class Reopen(Command):
             self.fail("a ticket to reopen is required")
 
         tktname = self.parsed_args[0]
-        for issue in self.load_project().issues:
+        for issue in self.project.issues:
             if tktname in issue.valid_names:
                 break
         else:
@@ -590,7 +592,7 @@ class QA(Command):
             self.fail("a ticket to send to QA is required")
 
         tktname = self.parsed_args[0]
-        for issue in self.load_project().issues:
+        for issue in self.project.issues:
             if tktname in issue.valid_names:
                 break
         else:
@@ -616,7 +618,7 @@ class Comment(Command):
             self.fail("a ticket to comment is required")
 
         tktname = self.parsed_args[0]
-        for issue in self.load_project().issues:
+        for issue in self.project.issues:
             if tktname in issue.valid_names:
                 break
         else:
@@ -641,8 +643,7 @@ class Drop(Command):
             self.fail("a ticket to drop is required")
 
         tktname = self.parsed_args[0]
-        project = self.load_project()
-        for issue in project.issues:
+        for issue in self.project.issues:
             if tktname in issue.valid_names:
                 break
         else:
@@ -650,11 +651,11 @@ class Drop(Command):
 
         shutil.rmtree(os.path.dirname(tkt.files.issue_filename(issue.id)))
 
-        project.issues.remove(issue)
+        self.project.issues.remove(issue)
 
         fp = open(tkt.files.project_filename(), 'w')
         try:
-            project.dump(fp)
+            self.project.dump(fp)
         finally:
             fp.close()
 
@@ -665,8 +666,7 @@ class Status(Command):
 
     def main(self):
         tickets = {}
-        project = self.load_project()
-        for issue in project.issues:
+        for issue in self.project.issues:
             tickets.setdefault(issue.type, []).append(issue)
 
         text = []
@@ -678,7 +678,7 @@ class Status(Command):
                 len(issues),
                 type))
 
-        issuechars = [issue.view_one_char() for issue in project.issues]
+        issuechars = [issue.view_one_char() for issue in self.project.issues]
         self.charoptions = [s[0] for s in tkt.models.Issue.statuses]
         issuechars.sort(key=self.issuecharkeyfunc)
 
@@ -699,8 +699,7 @@ class Edit(Command):
             self.fail("a ticket to edit is required")
 
         tktname = self.parsed_args[0]
-        project = self.load_project()
-        for issue in project.issues:
+        for issue in self.project.issues:
             if tktname in issue.valid_names:
                 break
         else:
@@ -771,8 +770,7 @@ class Start(Command):
             self.fail("a ticket to start is required")
 
         tktname = self.parsed_args[0]
-        project = self.load_project()
-        for issue in project.issues:
+        for issue in self.project.issues:
             if tktname in issue.valid_names:
                 break
         else:
@@ -800,8 +798,7 @@ class Stop(Command):
             self.fail("a ticket to stop is required")
 
         tktname = self.parsed_args[0]
-        project = self.load_project()
-        for issue in project.issues:
+        for issue in self.project.issues:
             if tktname in issue.valid_names:
                 break
         else:
@@ -842,10 +839,8 @@ class Grep(Command):
         matches = map(regex.search, output.splitlines())
         matches = set(match.groups()[0] for match in matches if match)
 
-        project = self.load_project()
-
         foundone = False
-        for issue in project.issues:
+        for issue in self.project.issues:
             if issue.id in matches:
                 foundone = True
                 print issue.view_one_line()
@@ -861,11 +856,9 @@ class Log(Command):
     usageinfo = "short form of recent activity"
 
     def main(self):
-        project = self.load_project()
-
         if self.parsed_args:
             tktname = self.parsed_args[0]
-            for issue in project.issues:
+            for issue in self.project.issues:
                 if tktname in issue.valid_names:
                     events = issue.events
                     break
@@ -873,7 +866,7 @@ class Log(Command):
                 self.fail("no ticket found with name %s" % tktname)
         else:
             events = []
-            for issue in project.issues:
+            for issue in self.project.issues:
                 events.extend(issue.events)
             events.sort()
 

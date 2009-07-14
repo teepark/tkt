@@ -271,7 +271,7 @@ class Issue(Model):
     def view_detail(self):
         created = "%s ago" % tkt.flextime.since(self.created)
 
-        if self.status == CLOSED and self.resolution:
+        if self.status == self.CLOSED and self.resolution:
             resolution = "\n     Resolution: %s" % self.resolution
         else:
             resolution = ""
