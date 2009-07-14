@@ -21,7 +21,7 @@ type: :feature
 component: tkt
 release: "0.2"
 reporter: Travis Parker <travis.parker@gmail.com>
-status: :unstarted
+status: :in_progress
 disposition: 
 creation_time: 2009-07-10 16:38:39.042680 Z
 references: []
@@ -43,7 +43,11 @@ log_events:
 - - 2009-07-14 03:16:26.014699 Z
   - Travis Parker <travis.parker@gmail.com>
   - edited description
-  - "already have and event log, add dependency plugin"
+  - already have and event log, add dependency plugin
+- - 2009-07-14 16:10:02.810670 Z
+  - Travis Parker <travis.parker@gmail.com>
+  - changed status from unstarted to in_progress
+  - components first, as that's probably the bigger feature
 git_branch: 
 claimer: 
 labels: []
