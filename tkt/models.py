@@ -137,6 +137,9 @@ class Configuration(Model):
     def default_datafolder(self):
         return self.DEFAULT_DATAFOLDER
 
+    def default_plugins(self):
+        return []
+
 class Event(Model):
     fields = [
         "id",
@@ -265,15 +268,18 @@ class Issue(Model):
 
     def view_detail(self):
         created = "%s ago" % tkt.flextime.since(self.created)
-        description = self.description.splitlines()
+
         if self.status == "closed" and self.resolution:
             resolution = "\n     Resolution: %s" % self.resolution
         else:
             resolution = ""
+
+        description = self.description.splitlines()
         if len(description) > 1:
             description = "\n> %s" % "\n> ".join(description)
         else:
-            description = description[0]
+            description = description and description[0] or ""
+
         return '''Issue %s
 %s
           Title: %s

@@ -9,8 +9,8 @@ type: :feature
 component: tkt
 release: "0.1"
 reporter: Travis Parker <travis.parker@gmail.com>
-status: :in_progress
-disposition: 
+status: :closed
+disposition: :fixed
 creation_time: 2009-07-11 00:08:45.675718 Z
 references: []
 
@@ -24,6 +24,10 @@ log_events:
   - Travis Parker <travis.parker@gmail.com>
   - changed status from unstarted to in_progress
   - not quite doing it like in the description, but more on that later
+- - 2009-07-14 04:10:51.403412 Z
+  - Travis Parker <travis.parker@gmail.com>
+  - closed with disposition fixed
+  - ""
 git_branch: 
 claimer: 
 labels: []
