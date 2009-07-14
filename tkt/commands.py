@@ -110,9 +110,7 @@ class Command(object):
         print msg,
         return raw_input()
 
-    def editor_prompt(self, message=None):
-        message = message or "Description"
-
+    def editor_prompt(self, message=""):
         message += "\n\nEnter your text above. Lines starting with a '#' " + \
                 "will be ignored."
         message = "\n## " + "\n## ".join(message.splitlines())
@@ -304,7 +302,7 @@ class Add(Command):
         while type not in typeoptions:
             type = self.parsed_options.type or self.prompt(typeprompt)
 
-        description = self.editor_prompt()
+        description = self.editor_prompt("Description")
 
         self.store_new_issue(None, title, description, type, self.username())
 
@@ -676,7 +674,7 @@ class Status(Command):
 class Edit(Command):
     usage = "ticket"
 
-    usageinfo = "edit the ticket data file with your text editor"
+    usageinfo = "edit the ticket data directly with your text editor"
 
     def main(self):
         if not (self.parsed_args and self.parsed_args[0]):
@@ -824,14 +822,13 @@ class Grep(Command):
 
         regex = re.compile("([0-9a-f]{32})/((issue)|([0-9a-f]{32}))\.yaml:")
         matches = map(regex.search, output.splitlines())
-
-        ids = [match.groups()[0] for match in matches if match]
+        matches = set(match.groups()[0] for match in matches if match)
 
         project = self.load_project()
 
         foundone = False
         for issue in project.issues:
-            if issue.id in ids:
+            if issue.id in matches:
                 foundone = True
                 print issue.view_one_line()
 
@@ -841,15 +838,26 @@ class Grep(Command):
 aliases('search')(Grep)
 
 class Log(Command):
+    usage = "[ticket]"
+
     usageinfo = "short form of recent activity"
 
     def main(self):
         project = self.load_project()
 
-        events = []
-        for issue in project.issues:
-            events.extend(issue.events)
-        events.sort()
+        if self.parsed_args:
+            tktname = self.parsed_args[0]
+            for issue in project.issues:
+                if tktname in issue.valid_names:
+                    events = issue.events
+                    break
+            else:
+                self.fail("no ticket found with name %s" % tktname)
+        else:
+            events = []
+            for issue in project.issues:
+                events.extend(issue.events)
+            events.sort()
 
         if not events:
             print "nothing to report"
