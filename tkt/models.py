@@ -60,13 +60,14 @@ class Model(object):
         return "not implemented"
 
 class Configuration(Model):
-    fields = ['username', 'useremail', 'datafolder']
+    fields = ['username', 'useremail', 'datafolder', 'plugins']
 
     RCFILENAME = '.tktrc.yaml'
     DEFAULT_DATAFOLDER = '.tkt'
 
     def __init__(self, data):
         super(Configuration, self).__init__(data)
+        self.plugins = self.plugins or []
         for fieldname in self.fields:
             if not getattr(self, fieldname):
                 setattr(self, fieldname,

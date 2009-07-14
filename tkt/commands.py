@@ -222,11 +222,12 @@ class Command(object):
 
         return event
 
-    def store_new_configuration(self, username, useremail, datafolder):
+    def store_new_configuration(self, username, useremail, datafolder, plugins):
         config = tkt.models.Configuration({
             'username': username,
             'useremail': useremail,
-            'datafolder': datafolder})
+            'datafolder': datafolder,
+            'plugins': plugins})
 
         rcpath = self.configobj.rcfile()
         fp = open(rcpath, 'w')
@@ -388,6 +389,12 @@ class Init(Command):
             'long': '--projectname',
             'help': 'name of the tracked project',
             'type': 'string',
+        },
+        {
+            'short': '-i',
+            'long': '--plugins',
+            'help': 'a comma-separated list of python-paths to plugins',
+            'type': 'string'
         }
     ]
 
@@ -418,7 +425,17 @@ class Init(Command):
                 self.prompt("Project Name [%s]:" % default_project) or\
                 default_project
 
-        self.store_new_configuration(username, useremail, datafolder)
+        if self.parsed_options.plugins:
+            plugins = self.parsed_options.plugins.split(',')
+        else:
+            plugins = []
+            while 1:
+                plugin = self.prompt("Plugin Python-Path [None]:")
+                if not plugin:
+                    break
+                plugins.append(plugin)
+
+        self.store_new_configuration(username, useremail, datafolder, plugins)
 
         project = self.load_project()
         project.name = projectname
