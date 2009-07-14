@@ -20,6 +20,7 @@ import tkt.config
 import yaml
 
 
+CLOSED = tkt.models.Issue.CLOSED
 DEFAULT = "todo"
 
 def main():
@@ -468,7 +469,7 @@ class Todo(Command):
     def main(self):
         project = self.load_project()
         for issue in project.issues:
-            if self.parsed_options.show_closed or issue.status != "closed":
+            if self.parsed_options.show_closed or issue.status != CLOSED:
                 print issue.view_one_line()
 
         if not project.issues:
@@ -536,7 +537,7 @@ class Close(Command):
         else:
             self.fail("no ticket found with name %s" % tktname)
 
-        issue.status = "closed"
+        issue.status = CLOSED
         issue.resolution = self.prompt_resolution()
 
         self.store_new_event(
@@ -564,7 +565,7 @@ class Reopen(Command):
         else:
             self.fail("no ticket found with name %s" % tktname)
 
-        if issue.status != "closed":
+        if issue.status != CLOSED:
             self.fail("ticket %s isn't closed, you dummy!" % tktname)
 
         issue.status = "reopened"
@@ -673,7 +674,7 @@ class Status(Command):
         for char, type in types:
             issues = tickets.get(type, [])
             text.append("%d/%d %s" % (
-                len([i for i in issues if i.status == "closed"]),
+                len([i for i in issues if i.status == CLOSED]),
                 len(issues),
                 type))
 
@@ -742,9 +743,9 @@ class Edit(Command):
                 isinstance(data['created'], datetime.datetime) and \
                 data['type'] in types and \
                 data['status'] in statuses and \
-                (data['status'] == 'closed' or \
+                (data['status'] == CLOSED or \
                     data['resolution'] is None) and \
-                (data['status'] != 'closed' or \
+                (data['status'] != CLOSED or \
                     data['resolution'] in resolutions) and \
                 isinstance(data['creator'], basestring) and \
                 "id" not in data and \

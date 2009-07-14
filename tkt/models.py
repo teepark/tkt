@@ -196,8 +196,10 @@ class Issue(Model):
             text.append("%s(%s)%s" % (name[:index], char, name[index + 1:]))
         return ", ".join(text)
 
+    CLOSED = "closed"
+
     statuses = [
-        ("x", "closed"),
+        ("x", CLOSED),
         ("q", "resolution in QA"),
         ("r", "reopened"),
         ("_", "open"),
@@ -269,7 +271,7 @@ class Issue(Model):
     def view_detail(self):
         created = "%s ago" % tkt.flextime.since(self.created)
 
-        if self.status == "closed" and self.resolution:
+        if self.status == CLOSED and self.resolution:
             resolution = "\n     Resolution: %s" % self.resolution
         else:
             resolution = ""
