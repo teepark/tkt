@@ -195,7 +195,7 @@ class Issue(Model):
     statuses = [
         ("x", "closed"),
         ("q", "resolution in QA"),
-        ("_", "reopened"),
+        ("r", "reopened"),
         ("_", "open"),
         ("=", "paused"),
         (">", "in progress"),
@@ -251,29 +251,36 @@ class Issue(Model):
 
     @property
     def valid_names(self):
-        return set([self.name, self.id])
+        names = set([self.name, self.id])
+        if self.name.startswith("#"):
+            names.add(self.name[1:])
+        return names
 
     def view_one_line(self):
         return "%s %s: %s" % (
             self.view_one_char(),
-            ("#%s" % self.name).rjust(self.longestname),
+            self.name.rjust(self.longestname),
             self.title)
 
     def view_detail(self):
         created = "%s ago" % tkt.flextime.since(self.created)
         description = self.description.splitlines()
+        if self.status == "closed" and self.resolution:
+            resolution = "\n     Resolution: %s" % self.resolution
+        else:
+            resolution = ""
         if len(description) > 1:
             description = "\n> %s" % "\n> ".join(description)
         else:
             description = description[0]
-        return '''Issue #%s
+        return '''Issue %s
 %s
           Title: %s
     Description: %s
         Creator: %s
             Age: %s
            Type: %s
-         Status: %s
+         Status: %s%s
      Identifier: %s
 
 Event Log:
@@ -287,6 +294,7 @@ Event Log:
             created,
             self.type,
             self.status,
+            resolution,
             self.id,
             self.event_log())
 
@@ -311,7 +319,7 @@ class Project(Model):
         self.issues.sort()
         longestname = len(str(len(self.issues)))
         for i, issue in enumerate(self.issues):
-            self.issues[i].name = str(i)
+            self.issues[i].name = "#%d" % i
             self.issues[i].longestname = longestname
 
     def dump(self, stream=None):

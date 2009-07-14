@@ -1,10 +1,13 @@
 import bisect
 import collections
 import datetime
+import glob
 import operator
 import optparse
 import os
 import random
+import re
+import shutil
 import stat
 import subprocess
 import sys
@@ -14,6 +17,7 @@ import uuid
 import tkt.files
 import tkt.models
 import tkt.config
+import yaml
 
 
 DEFAULT = "todo"
@@ -24,11 +28,16 @@ def main():
         arg = sys.argv[1]
     else:
         arg = DEFAULT
+
     cmd = Command.cmds.get(arg)
     if cmd is None:
         sys.stderr.write("unknown tkt command: %s\n" % arg)
         sys.exit(1)
-    cmd().main()
+    cmd = cmd()
+
+    cmd.prepare_options()
+
+    cmd.main()
 
 def aliases(*names):
     def decorator(cls):
@@ -67,9 +76,6 @@ class Command(object):
         argv = sys.argv[1:]
 
     def main(self):
-        if hasattr(getattr(self, 'prepare_options', None), '__call__'):
-            self.prepare_options()
-
         if sys.stdin.isatty():
             self.ttymain()
         else:
@@ -80,6 +86,9 @@ class Command(object):
 
     def pipemain(self):
         raise NotImplementedError()
+
+    def prepare_options(self):
+        pass
 
     @property
     def parsed_options(self):
@@ -319,9 +328,11 @@ aliases('new')(Add)
 class Help(Command):
     usage = "command"
 
+    usageinfo = "explain tkt commands"
+
     def main(self):
         if not self.parsed_args:
-            print "Commands (use 'tkt help <cmd>' to see more detail)"
+            print "Commands (use 'tkt help <cmd>' to see more detail)\n"
             print self.list_args()
             sys.exit()
         arg = self.parsed_args[0]
@@ -330,8 +341,7 @@ class Help(Command):
             sys.stderr.write("unknown tkt command: %s\n" % arg)
             sys.exit(1)
         cmd = cmd()
-        if hasattr(getattr(cmd, "prepare_options"), "__call__"):
-            cmd.prepare_options()
+        cmd.prepare_options()
         cmd._build_parser().print_help()
 
     def list_args(self):
@@ -347,7 +357,7 @@ class Help(Command):
         longest = max(len(pair[1]) for pair in groups)
         for cmd, names in groups:
             if hasattr(cmd, "usageinfo"):
-                output.append("%s : %s" % (names.ljust(longest), cmd.usageinfo))
+                output.append(" %s: %s" % (names.rjust(longest), cmd.usageinfo))
             else:
                 output.append(names)
 
@@ -382,6 +392,8 @@ class Init(Command):
             'type': 'string',
         }
     ]
+
+    usageinfo = "set up a new tkt repository"
 
     def main(self):
         self.configobj = tkt.models.Configuration(None)
@@ -430,25 +442,33 @@ class Init(Command):
 aliases('setup')(Init)
 
 class Todo(Command):
-
     options = [{
         'short': '-c',
         'long': '--show-closed',
         'help': 'also show closed tickets',
     }]
 
-    def ttymain(self):
+    usageinfo = "list tickets"
+
+    def main(self):
         project = self.load_project()
         for issue in project.issues:
             if self.parsed_options.show_closed or issue.status != "closed":
                 print issue.view_one_line()
 
-    pipemain = ttymain
+        if not project.issues:
+            if self.parsed_options.show_closed:
+                print "no issues"
+            else:
+                print "no open issues"
 
 class Show(Command):
     usage = "ticket"
-    def ttymain(self):
-        if not self.parsed_args and self.parsed_args[0]:
+
+    usageinfo = "display a ticket in detail"
+
+    def main(self):
+        if not (self.parsed_args and self.parsed_args[0]):
             self.fail("a ticket to show is required")
 
         tktname = self.parsed_args[0]
@@ -460,12 +480,12 @@ class Show(Command):
 
         print issue.view_detail()
 
-    pipemain = ttymain
-
 aliases('view')(Show)
 
 class Close(Command):
     usage = 'ticket'
+
+    usageinfo = "mark a ticket as closed"
 
     options = [{
         'short': '-r',
@@ -478,8 +498,20 @@ class Close(Command):
         self.options[0]['help'] = self.options[0]['help'] % \
                 tkt.models.Issue.resolutions_text()
 
-    def ttymain(self):
-        if not self.parsed_args and self.parsed_args[0]:
+    def prompt_resolution(self):
+        resolutions = dict(tkt.models.Issue.resolutions)
+        while 1:
+            resolution = self.prompt("Resolution - %s:" %
+                    tkt.models.Issue.resolutions_text())
+            try:
+                resolution = int(resolution)
+            except ValueError:
+                continue
+            if resolution in resolutions:
+                return resolutions[resolution]
+
+    def main(self):
+        if not (self.parsed_args and self.parsed_args[0]):
             self.fail("a ticket to close is required")
 
         tktname = self.parsed_args[0]
@@ -490,6 +522,7 @@ class Close(Command):
             self.fail("no ticket found with name %s" % tktname)
 
         issue.status = "closed"
+        issue.resolution = self.prompt_resolution()
 
         self.store_new_event(
             issue,
@@ -498,15 +531,15 @@ class Close(Command):
             self.username(),
             self.editor_prompt("Comment"))
 
-    pipemain = ttymain
-
 aliases('finish', 'end')(Close)
 
 class Reopen(Command):
     usage = 'ticket'
 
+    usageinfo = "reopen a closed ticket"
+
     def ttymain(self):
-        if not self.parsed_args and self.parsed_args[0]:
+        if not (self.parsed_args and self.parsed_args[0]):
             self.fail("a ticket to reopen is required")
 
         tktname = self.parsed_args[0]
@@ -520,6 +553,7 @@ class Reopen(Command):
             self.fail("ticket %s isn't closed, you dummy!" % tktname)
 
         issue.status = "reopened"
+        issue.resolution = None
 
         self.store_new_event(
             issue,
@@ -533,9 +567,11 @@ class Reopen(Command):
 class QA(Command):
     usage = 'ticket'
 
-    def ttymain(self):
-        if not self.parsed_args and self.parsed_args[0]:
-            self.fail("a ticket to reopen is required")
+    usageinfo = "mark a ticket as ready for QA"
+
+    def main(self):
+        if not (self.parsed_args and self.parsed_args[0]):
+            self.fail("a ticket to send to QA is required")
 
         tktname = self.parsed_args[0]
         for issue in self.load_project().issues:
@@ -545,6 +581,7 @@ class QA(Command):
             self.fail("no ticket found with name %s" % tktname)
 
         issue.status = "resolution in QA"
+        issue.resolution = None
 
         self.store_new_event(
             issue,
@@ -553,4 +590,292 @@ class QA(Command):
             self.username(),
             self.editor_prompt("Comment"))
 
-    pipemain = ttymain
+class Comment(Command):
+    usage = 'ticket'
+
+    usageinfo = "add a comment to a ticket"
+
+    def main(self):
+        if not (self.parsed_args and self.parsed_args[0]):
+            self.fail("a ticket to comment is required")
+
+        tktname = self.parsed_args[0]
+        for issue in self.load_project().issues:
+            if tktname in issue.valid_names:
+                break
+        else:
+            self.fail("no ticket found with name %s" % tktname)
+
+        self.store_new_event(
+            issue,
+            "comment added",
+            datetime.datetime.now(),
+            self.username(),
+            self.editor_prompt("Comment"))
+
+aliases('annotate')(Comment)
+
+class Drop(Command):
+    usage = 'ticket'
+
+    usageinfo = "completely purge a ticket from the repository"
+
+    def main(self):
+        if not (self.parsed_args and self.parsed_args[0]):
+            self.fail("a ticket to drop is required")
+
+        tktname = self.parsed_args[0]
+        project = self.load_project()
+        for issue in project.issues:
+            if tktname in issue.valid_names:
+                break
+        else:
+            self.fail("no ticket found with name %s" % tktname)
+
+        shutil.rmtree(os.path.dirname(tkt.files.issue_filename(issue.id)))
+
+        project.issues.remove(issue)
+
+        fp = open(tkt.files.project_filename(), 'w')
+        try:
+            project.dump(fp)
+        finally:
+            fp.close()
+
+aliases('delete')(Drop)
+
+class Status(Command):
+    usageinfo = 'print a rundown of the progress on all tickets'
+
+    def main(self):
+        tickets = {}
+        project = self.load_project()
+        for issue in project.issues:
+            tickets.setdefault(issue.type, []).append(issue)
+
+        text = []
+        types = sorted(tkt.models.Issue.types, key=operator.itemgetter(1))
+        for char, type in types:
+            issues = tickets.get(type, [])
+            text.append("%d/%d %s" % (
+                len([i for i in issues if i.status == "closed"]),
+                len(issues),
+                type))
+
+        issuechars = [issue.view_one_char() for issue in project.issues]
+        self.charoptions = [s[0] for s in tkt.models.Issue.statuses]
+        issuechars.sort(key=self.issuecharkeyfunc)
+
+        print "%s  %s" % (",  ".join(text), "".join(issuechars))
+
+    def issuecharkeyfunc(self, s):
+        if s in self.charoptions:
+            return self.charoptions.index(s)
+        return -1
+
+class Edit(Command):
+    usage = "ticket"
+
+    usageinfo = "edit the ticket data file with your text editor"
+
+    def main(self):
+        if not (self.parsed_args and self.parsed_args[0]):
+            self.fail("a ticket to edit is required")
+
+        tktname = self.parsed_args[0]
+        project = self.load_project()
+        for issue in project.issues:
+            if tktname in issue.valid_names:
+                break
+        else:
+            self.fail("no ticket found with name %s" % tktname)
+
+        data = {
+            'title': issue.title,
+            'description': issue.description,
+            'created': issue.created,
+            'type': issue.type,
+            'status': issue.status,
+            'resolution': issue.resolution,
+            'creator': issue.creator,
+        }
+
+        temp = tempfile.mktemp()
+        fp = open(temp, 'w')
+        try:
+            yaml.dump(data, stream=fp, default_flow_style=False)
+        finally:
+            fp.close()
+
+        proc = subprocess.Popen([os.environ.get("EDITOR", "vi"), temp])
+        proc.wait()
+
+        fp = open(temp)
+        try:
+            data = yaml.load(fp)
+        except:
+            self.fail("that was invalid yaml")
+        finally:
+            fp.close()
+
+        # heavy validation so we don't wind up in an inconsistent state
+        types = [t[1] for t in tkt.models.Issue.types]
+        statuses = [s[1] for s in tkt.models.Issue.statuses]
+        resolutions = [r[1] for r in tkt.models.Issue.resolutions]
+        if not (isinstance(data['title'], basestring) and \
+                isinstance(data['description'], basestring) and \
+                isinstance(data['created'], datetime.datetime) and \
+                data['type'] in types and \
+                data['status'] in statuses and \
+                (data['status'] == 'closed' or \
+                    data['resolution'] is None) and \
+                (data['status'] != 'closed' or \
+                    data['resolution'] in resolutions) and \
+                isinstance(data['creator'], basestring) and \
+                "id" not in data and \
+                "events" not in data):
+            self.fail("edited ticket is invalid")
+
+        issue.__dict__.update(data)
+
+        self.store_new_event( # will also store the issue changes
+            issue,
+            "ticket edited",
+            datetime.datetime.now(),
+            self.username(),
+            "")
+
+class Start(Command):
+    usage = "ticket"
+
+    usageinfo = "record work started on a ticket"
+
+    def main(self):
+        if not (self.parsed_args and self.parsed_args[0]):
+            self.fail("a ticket to start is required")
+
+        tktname = self.parsed_args[0]
+        project = self.load_project()
+        for issue in project.issues:
+            if tktname in issue.valid_names:
+                break
+        else:
+            self.fail("no ticket found with name %s" % tktname)
+
+        issue.status = "in progress"
+        issue.resolution = None
+
+        self.store_new_event(
+            issue,
+            "work on ticket started",
+            datetime.datetime.now(),
+            self.username(),
+            self.editor_prompt("Comment"))
+
+aliases('work')(Start)
+
+class Stop(Command):
+    usage = "ticket"
+
+    usageinfo = "record work stopped on a ticket"
+
+    def main(self):
+        if not (self.parsed_args and self.parsed_args[0]):
+            self.fail("a ticket to stop is required")
+
+        tktname = self.parsed_args[0]
+        project = self.load_project()
+        for issue in project.issues:
+            if tktname in issue.valid_names:
+                break
+        else:
+            self.fail("no ticket found with name %s" % tktname)
+
+        if issue.status != "in progress":
+            self.fail("ticket %s isn't in progress, you dummy!" % tktname)
+
+        issue.status = "paused"
+        issue.resolution = None
+
+        self.store_new_event(
+            issue,
+            "work on ticket stopped",
+            datetime.datetime.now(),
+            self.username(),
+            self.editor_prompt("Comment"))
+
+aliases('pause')(Stop)
+
+class Grep(Command):
+    usage = "regular-expression"
+
+    usageinfo = "search for tickets that match a regular expression"
+
+    def main(self):
+        if not (self.parsed_args and self.parsed_args[0]):
+            self.fail("a regular expression argument required")
+
+        dirname = os.path.dirname(tkt.files.project_filename())
+        args = ["grep", "-E", self.parsed_args[0]]
+        args.extend(glob.glob("%s%s*%s*.yaml" % (dirname, os.sep, os.sep)))
+
+        proc = subprocess.Popen(args, stdout=subprocess.PIPE)
+        output = proc.communicate()[0]
+
+        regex = re.compile("([0-9a-f]{32})/((issue)|([0-9a-f]{32}))\.yaml:")
+        matches = map(regex.search, output.splitlines())
+
+        ids = [match.groups()[0] for match in matches if match]
+
+        project = self.load_project()
+
+        foundone = False
+        for issue in project.issues:
+            if issue.id in ids:
+                foundone = True
+                print issue.view_one_line()
+
+        if not foundone:
+            print "no matches found"
+
+aliases('search')(Grep)
+
+class Log(Command):
+    usageinfo = "short form of recent activity"
+
+    def main(self):
+        project = self.load_project()
+
+        events = []
+        for issue in project.issues:
+            events.extend(issue.events)
+        events.sort()
+
+        if not events:
+            print "nothing to report"
+            sys.exit()
+
+        log = []
+        for event in events:
+            log.append([
+                "%s ago" % tkt.flextime.since(event.created),
+                event.issue.name,
+                event.issue.creator, 
+                event.title
+            ])
+
+        longest = [0] * len(log[0])
+        for item in log:
+            for i, text in enumerate(item):
+                longest[i] = max(longest[i], len(text))
+
+        for item in log:
+            for i, text in list(enumerate(item)):
+                if i == len(item) - 1:
+                    item[i] = text.ljust(longest[i])
+                else:
+                    item[i] = text.rjust(longest[i])
+
+            print " " + " | ".join(item)
+
+aliases('shortlog')(Log)
