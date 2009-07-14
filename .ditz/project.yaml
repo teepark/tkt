@@ -7,12 +7,16 @@ components:
 releases: 
 - !ditz.rubyforge.org,2008-03-06/release 
   name: "0.1"
-  status: :unreleased
-  release_time: 
+  status: :released
+  release_time: 2009-07-14 04:15:16.536228 Z
   log_events: 
   - - 2009-07-10 02:32:26.369472 Z
     - Travis Parker <travis.parker@gmail.com>
     - created
+    - ""
+  - - 2009-07-14 04:15:16.536281 Z
+    - Travis Parker <travis.parker@gmail.com>
+    - released
     - ""
 - !ditz.rubyforge.org,2008-03-06/release 
   name: "0.2"
