@@ -7,7 +7,7 @@ setup(
     name="tkt",
     packages=["tkt"],
     scripts=["scripts/tkt"],
-    version="0.1",
+    version="0.2",
     author="Travis Parker",
     author_email="travis.parker@gmail.com"
 )
