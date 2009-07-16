@@ -111,7 +111,7 @@ class Add(tkt.commands.Add):
 tkt.commands.aliases("new")(Add)
 
 class Status(tkt.commands.Status):
-    usage = "[component]"
+    usage = "[<component>]"
 
     def main(self):
         if self.parsed_args:
@@ -125,7 +125,7 @@ class Status(tkt.commands.Status):
             super(Status, self).main()
 
 class Component(tkt.commands.Command):
-    usage = "ticket component"
+    usage = "<ticket> <component>"
 
     usageinfo = "set the component of a ticket"
 

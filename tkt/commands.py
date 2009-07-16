@@ -69,7 +69,7 @@ class Command(object):
     options = []
 
     # only for specifying positional arguments in the usage message:
-    # usage = "foo [bar]" -> "usage: tkt <commandname> foo [bar] [options]"
+    # usage = "foo [bar]" -> "usage: tkt <commandname> foo [bar] [<options>]"
     usage = ""
 
     if len(sys.argv) > 1 and sys.argv[1] and not sys.argv[1].startswith('-'):
@@ -268,7 +268,7 @@ class Command(object):
 
             parser.add_option(short, long, **kwargs)
 
-        parser.usage = "tkt %s %s [options]" % (
+        parser.usage = "tkt %s %s [<options>]" % (
                 self.__class__.__name__.lower(), self.usage)
 
         if hasattr(self, "usageinfo"):
@@ -332,7 +332,7 @@ class Add(Command):
 aliases('new')(Add)
 
 class Help(Command):
-    usage = "command"
+    usage = "[<command>]"
 
     usageinfo = "explain tkt commands"
 
@@ -486,7 +486,7 @@ class Todo(Command):
                 print issue.view_one_line()
 
 class Show(Command):
-    usage = "ticket"
+    usage = "<ticket>"
 
     usageinfo = "display a ticket in detail"
 
@@ -506,7 +506,7 @@ class Show(Command):
 aliases('view')(Show)
 
 class Close(Command):
-    usage = 'ticket'
+    usage = '<ticket>'
 
     usageinfo = "mark a ticket as closed"
 
@@ -557,7 +557,7 @@ class Close(Command):
 aliases('finish', 'end')(Close)
 
 class Reopen(Command):
-    usage = 'ticket'
+    usage = '<ticket>'
 
     usageinfo = "reopen a closed ticket"
 
@@ -588,7 +588,7 @@ class Reopen(Command):
     pipmain = ttymain
 
 class QA(Command):
-    usage = 'ticket'
+    usage = '<ticket>'
 
     usageinfo = "mark a ticket as ready for QA"
 
@@ -614,7 +614,7 @@ class QA(Command):
             self.editor_prompt("Comment"))
 
 class Comment(Command):
-    usage = 'ticket'
+    usage = '<ticket>'
 
     usageinfo = "add a comment to a ticket"
 
@@ -639,7 +639,7 @@ class Comment(Command):
 aliases('annotate')(Comment)
 
 class Drop(Command):
-    usage = 'ticket'
+    usage = '<ticket>'
 
     usageinfo = "completely purge a ticket from the repository"
 
@@ -698,7 +698,7 @@ class Status(Command):
         return -1
 
 class Edit(Command):
-    usage = "ticket"
+    usage = "<ticket>"
 
     usageinfo = "edit the ticket data directly with your text editor"
 
@@ -802,7 +802,7 @@ class Edit(Command):
             "")
 
 class Start(Command):
-    usage = "ticket"
+    usage = "<ticket>"
 
     usageinfo = "record work started on a ticket"
 
@@ -830,7 +830,7 @@ class Start(Command):
 aliases('work')(Start)
 
 class Stop(Command):
-    usage = "ticket"
+    usage = "<ticket>"
 
     usageinfo = "record work stopped on a ticket"
 
@@ -861,7 +861,7 @@ class Stop(Command):
 aliases('pause')(Stop)
 
 class Grep(Command):
-    usage = "regular-expression"
+    usage = "<regular-expression>"
 
     usageinfo = "search for tickets that match a regular expression"
 
@@ -892,7 +892,7 @@ class Grep(Command):
 aliases('search')(Grep)
 
 class Log(Command):
-    usage = "[ticket]"
+    usage = "[<ticket>]"
 
     usageinfo = "short form of recent activity"
 
