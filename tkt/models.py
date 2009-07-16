@@ -66,7 +66,7 @@ class Configuration(Model):
     DEFAULT_DATAFOLDER = '.tkt'
 
     def __init__(self, data):
-        super(Configuration, self).__init__(data)
+        Model.__init__(self, data)
         self.plugins = self.plugins or []
         for fieldname in self.fields:
             if not getattr(self, fieldname):
@@ -218,7 +218,7 @@ class Issue(Model):
         return ", ".join("(%d) %s" % pair for pair in cls.resolutions)
 
     def __init__(self, data):
-        super(Issue, self).__init__(data)
+        Model.__init__(self, data)
 
         events = []
         for eventid in self.events:
@@ -239,7 +239,7 @@ class Issue(Model):
     def dump(self, stream=None):
         fullevents = self.events
         self.events = [e.id for e in fullevents]
-        data = super(Issue, self).dump(stream)
+        data = Model.dump(self, stream)
         self.events = fullevents
         return data
 
@@ -257,7 +257,7 @@ class Issue(Model):
 
     @property
     def valid_names(self):
-        names = set([self.name, self.id])
+        names = set([self.name, self.id, "%s-%s" % (self.project.name, self.id)])
         if self.name.startswith("#"):
             names.add(self.name[1:])
         return names
@@ -314,18 +314,23 @@ class Project(Model):
     fields = ["name", "issues"]
 
     def __init__(self, data):
-        super(Project, self).__init__(data)
+        Model.__init__(self, data)
 
         issues = []
         for issueid in self.issues or []:
             fp = open(tkt.files.issue_filename(issueid))
             try:
-                issues.append(Issue.load(fp))
+                issue = Issue.load(fp)
+                issue.project = self
+                issues.append(issue)
             finally:
                 fp.close()
         self.issues = issues
 
         self.issues.sort()
+        self.assign_issue_names()
+
+    def assign_issue_names(self):
         longestname = len(str(len(self.issues)))
         for i, issue in enumerate(self.issues):
             self.issues[i].name = "#%d" % i
@@ -334,6 +339,6 @@ class Project(Model):
     def dump(self, stream=None):
         fullissues = self.issues
         self.issues = [i.id for i in fullissues]
-        data = super(Project, self).dump(stream)
+        data = Model.dump(self, stream)
         self.issues = fullissues
         return data

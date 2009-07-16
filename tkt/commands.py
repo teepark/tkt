@@ -1,6 +1,7 @@
 import bisect
 import collections
 import datetime
+import functools
 import glob
 import operator
 import optparse
@@ -294,12 +295,10 @@ class Add(Command):
     usageinfo = "create a new ticket"
 
     def prepare_options(self):
-        # delay doing this substitution until now in case
-        # plugins wanted to add to the list of Issue types
         self.options[1]['help'] = self.options[1]['help'] % \
                 tkt.models.Issue.types_text()
 
-    def ttymain(self):
+    def get_data(self):
         title = self.parsed_options.title or self.prompt("Title:")
 
         typeoptions = set(pair[0] for pair in tkt.models.Issue.types)
@@ -310,7 +309,10 @@ class Add(Command):
 
         description = self.editor_prompt("Description")
 
-        self.store_new_issue(title, description, type, self.username())
+        return title, type, description, self.username()
+
+    def ttymain(self):
+        self.store_new_issue(*self.get_data())
 
     def pipemain(self):
         self.require_all_options()
@@ -407,7 +409,7 @@ class Init(Command):
 
     def main(self):
         self.configobj = tkt.models.Configuration(None)
-        super(Init, self).main()
+        Command.main(self)
 
     def ttymain(self):
         default_username = self.configobj.default_username()
@@ -435,7 +437,7 @@ class Init(Command):
         else:
             plugins = []
             while 1:
-                plugin = self.prompt("Plugin Python-Path [None]:")
+                plugin = self.prompt("Plugin Python-Path [Enter to end]:")
                 if not plugin:
                     break
                 plugins.append(plugin)
@@ -470,15 +472,18 @@ class Todo(Command):
     usageinfo = "list tickets"
 
     def main(self):
-        for issue in self.project.issues:
-            if self.parsed_options.show_closed or issue.status != CLOSED:
-                print issue.view_one_line()
+        self.display_issues(self.project.issues)
 
         if not self.project.issues:
             if self.parsed_options.show_closed:
                 print "no issues"
             else:
                 print "no open issues"
+
+    def display_issues(self, issuelist):
+        for issue in issuelist:
+            if self.parsed_options.show_closed or issue.status != CLOSED:
+                print issue.view_one_line()
 
 class Show(Command):
     usage = "ticket"
@@ -665,20 +670,23 @@ class Status(Command):
     usageinfo = 'print a rundown of the progress on all tickets'
 
     def main(self):
+        self.display_status(self.project.issues)
+
+    def display_status(self, issues):
         tickets = {}
-        for issue in self.project.issues:
+        for issue in issues:
             tickets.setdefault(issue.type, []).append(issue)
 
         text = []
         types = sorted(tkt.models.Issue.types, key=operator.itemgetter(1))
         for char, type in types:
-            issues = tickets.get(type, [])
+            issuegroup = tickets.get(type, [])
             text.append("%d/%d %s" % (
-                len([i for i in issues if i.status == CLOSED]),
-                len(issues),
+                len([i for i in issuegroup if i.status == CLOSED]),
+                len(issuegroup),
                 type))
 
-        issuechars = [issue.view_one_char() for issue in self.project.issues]
+        issuechars = [issue.view_one_char() for issue in issues]
         self.charoptions = [s[0] for s in tkt.models.Issue.statuses]
         issuechars.sort(key=self.issuecharkeyfunc)
 
@@ -694,6 +702,43 @@ class Edit(Command):
 
     usageinfo = "edit the ticket data directly with your text editor"
 
+    def validate_title(self, title):
+        return isinstance(title, basestring)
+
+    def validate_description(self, description):
+        return isinstance(description, basestring)
+
+    def validate_created(self, created):
+        return isinstance(description, datetime.datetime)
+
+    def validate_type(self, type):
+        for char, name in tkt.models.Issues.types:
+            if name == type:
+                return True
+        return False
+
+    def validate_status_resolution(self, status, resolution):
+        if resolution is None:
+            return status == CLOSED
+
+        if status == CLOSED:
+            return False
+
+        for char, name in tkt.models.Issue.statuses:
+            if name == status:
+                break
+        else:
+            return False
+
+        for num, name in tkt.models.Issue.resolutions:
+            if name == resolution:
+                break
+        else:
+            return False
+
+    def validate_creator(self, creator):
+        return isinstance(creator, basestring)
+
     def main(self):
         if not (self.parsed_args and self.parsed_args[0]):
             self.fail("a ticket to edit is required")
@@ -705,15 +750,13 @@ class Edit(Command):
         else:
             self.fail("no ticket found with name %s" % tktname)
 
-        data = {
-            'title': issue.title,
-            'description': issue.description,
-            'created': issue.created,
-            'type': issue.type,
-            'status': issue.status,
-            'resolution': issue.resolution,
-            'creator': issue.creator,
-        }
+        data = dict(zip(issue.fields, map(functools.partial(getattr, issue),
+                                          issue.fields)))
+        data = {}
+        for field in issue.fields:
+            if field in ("events", "id"):
+                continue
+            data[field] = getattr(issue, field)
 
         temp = tempfile.mktemp()
         fp = open(temp, 'w')
@@ -734,22 +777,20 @@ class Edit(Command):
             fp.close()
 
         # heavy validation so we don't wind up in an inconsistent state
-        types = [t[1] for t in tkt.models.Issue.types]
-        statuses = [s[1] for s in tkt.models.Issue.statuses]
-        resolutions = [r[1] for r in tkt.models.Issue.resolutions]
-        if not (isinstance(data['title'], basestring) and \
-                isinstance(data['description'], basestring) and \
-                isinstance(data['created'], datetime.datetime) and \
-                data['type'] in types and \
-                data['status'] in statuses and \
-                (data['status'] == CLOSED or \
-                    data['resolution'] is None) and \
-                (data['status'] != CLOSED or \
-                    data['resolution'] in resolutions) and \
-                isinstance(data['creator'], basestring) and \
-                "id" not in data and \
-                "events" not in data):
-            self.fail("edited ticket is invalid")
+        for key, value in data.iteritems():
+            if key == "status":
+                if not self.validate_status_resolution(value,
+                        data.get('resolutoin')):
+                    self.fail('edited ticket is invalid')
+
+            if key == "resolution":
+                continue
+
+            if not hasattr(self, "validate_%s" % key):
+                self.fail("edited ticket is invalid")
+
+            if not getattr(self, "validate_%s" % key)(value):
+                self.fail("edited ticket is invalid")
 
         issue.__dict__.update(data)
 

@@ -1,3 +1,6 @@
+import sys
+import traceback
+
 import tkt.config
 
 for plugin in tkt.config.config.plugins:
@@ -6,4 +9,7 @@ for plugin in tkt.config.config.plugins:
         # all we do here is to import them
         __import__(plugin)
     except:
-        pass
+        titleline = "exception in '%s' plugin" % plugin
+        print titleline
+        print "-" * len(titleline)
+        print "".join(traceback.format_exception(*sys.exc_info()))
