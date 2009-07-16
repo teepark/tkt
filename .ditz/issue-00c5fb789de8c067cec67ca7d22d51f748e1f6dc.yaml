@@ -3,24 +3,26 @@ title: releases plugin
 desc: |-
   ditz features to get done in this plugin
   
-  1. add-release
-  2. drop-release
-  3. assign
-  4. unassign
-  5. archive
-  6. release
-  7. changelog
-  8. releases
+  1. add-release cmd
+  2. drop-release cmd
+  3. assign cmd
+  4. unassign cmd
+  5. archive cmd
+  6. release cmd
+  7. changelog cmd
+  8. releases cmd
+  9. todo cmd groups by release
+  10. status cmd groups by release
   
   in tkt they will be called
   
-  1. create-release
-  2. drop-release
-  3. schedule
-  4. unschedule
-  5. archive-release
-  6. release
-  7. changelog
+  1. add <release> (add cmd will be able to have 'release' as a positional arg)
+  2. drop <release> (like add release)
+  3. schedule <ticket> <release>
+  4. unschedule <ticket>
+  5. archive <release>
+  6. release <release>
+  7. changelog <release>
   8. releases
 type: :feature
 component: tkt
@@ -37,6 +39,18 @@ log_events:
   - Travis Parker <travis.parker@gmail.com>
   - created
   - ""
+- - 2009-07-16 18:14:55.651428 Z
+  - Travis Parker <travis.parker@gmail.com>
+  - edited description
+  - ""
+- - 2009-07-16 18:23:17.996350 Z
+  - Travis Parker <travis.parker@gmail.com>
+  - edited description
+  - ""
+- - 2009-07-16 18:23:59.712233 Z
+  - Travis Parker <travis.parker@gmail.com>
+  - commented
+  - "some backend work for this: Issues.fields.append(\"release\")"
 git_branch: 
 claimer: 
 labels: []
