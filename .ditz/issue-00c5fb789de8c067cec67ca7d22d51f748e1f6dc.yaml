@@ -28,8 +28,8 @@ type: :feature
 component: tkt
 release: "0.2"
 reporter: Travis Parker <travis.parker@gmail.com>
-status: :unstarted
-disposition: 
+status: :closed
+disposition: :fixed
 creation_time: 2009-07-16 07:18:10.112439 Z
 references: []
 
@@ -55,6 +55,16 @@ log_events:
   - Travis Parker <travis.parker@gmail.com>
   - commented
   - added the fields to Issue and Project
+- - 2009-07-17 20:11:36.977820 Z
+  - Travis Parker <travis.parker@gmail.com>
+  - commented
+  - |-
+    archive command can be put off
+    unschedule was implemented as a part of schedule
+- - 2009-07-17 20:12:14.295807 Z
+  - Travis Parker <travis.parker@gmail.com>
+  - closed with disposition fixed
+  - -- still need to do the archive command eventually
 git_branch: 
 claimer: 
 labels: []

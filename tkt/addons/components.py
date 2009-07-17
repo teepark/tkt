@@ -11,9 +11,17 @@ import tkt.models
 # add fields
 tkt.models.Issue.fields.append("component")
 tkt.models.Project.fields.append("components")
+tkt.models.Issue.display.append("component")
+
+ParentIssue = tkt.models.Issue
+class Issue(ParentIssue):
+    def view_component(self):
+        return self.component or self.project.name
+
+tkt.models.Issue = Issue
 
 ParentProject = tkt.models.Project
-class Project(tkt.models.Project):
+class Project(ParentProject):
     def __init__(self, *args, **kwargs):
         ParentProject.__init__(self, *args, **kwargs)
         self.components = self.components or []
@@ -39,76 +47,37 @@ class Project(tkt.models.Project):
 
 tkt.models.Project = Project
 
-class Add(tkt.commands.Add):
-    options = tkt.commands.Add.options + [{
-        'short': '-c',
-        'long': '--component',
-        'help': 'the component for this ticket',
-        'type': 'string',
-    }]
+tkt.commands.Add.options += [{
+    'short': '-c',
+    'long': '--component',
+    'help': 'the component for this ticket',
+    'type': 'string',
+}]
 
-    def get_component(self):
-        if not self.project.components:
-            return self.project.name
+tkt.commands.Add.required_data.append("component")
 
-        if len(self.project.components) == 1:
-            return self.project.components[0]
+def gather_component(self):
+    if not self.project.components:
+        return self.project.name
 
-        if self.parsed_options.component in self.project.components:
-            return self.parsed_options.component
+    if len(self.project.components) == 1:
+        return self.project.components[0]
 
-        msg = "Pick a component\n[0]) %s" % self.project.components[0]
-        msg += "".join("\n%d) %s" % p for p
-                       in list(enumerate(self.project.components))[1:])
+    if self.parsed_options.component in self.project.components:
+        return self.parsed_options.component
 
-        while 1:
-            index = self.prompt(msg + ":")
-            if index.isdigit():
-                index = int(index)
-            if 0 <= int(index) < len(self.project.components):
-                return self.project.components[index]
+    msg = "Pick a component\n[0]) %s" % self.project.components[0]
+    msg += "".join("\n%d) %s" % p for p
+                   in list(enumerate(self.project.components))[1:])
 
-    def get_data(self):
-        title, type, description, username = super(Add, self).get_data()
+    while 1:
+        index = self.prompt(msg + ":")
+        if index.isdigit():
+            index = int(index)
+        if 0 <= int(index) < len(self.project.components):
+            return self.project.components[index]
 
-        component = self.get_component()
-
-        return title, type, description, username, component
-
-    def store_new_issue(self, title, type, description, user, component):
-        # almost cut'n pasted from the original
-        issue = tkt.models.Issue({
-            'id': uuid.uuid4().hex,
-            'title': title,
-            'description': description,
-            'created': datetime.datetime.now(),
-            'type': dict(tkt.models.Issue.types)[type],
-            'status': 'open',
-            'resolution': None,
-            'creator': user,
-            'events': [],
-            'component': component})
-
-        bisect.insort(self.project.issues, issue)
-
-        issuepath = tkt.files.issue_filename(issue.id)
-        issuedir = os.path.abspath(os.path.join(issuepath, os.pardir))
-
-        if not os.path.exists(issuedir):
-            os.makedirs(issuedir)
-
-        fp = open(tkt.files.project_filename(), 'w')
-        try:
-            self.project.dump(fp)
-        finally:
-            fp.close()
-
-        # this dumps the issue too
-        self.store_new_event(issue, "issue created", issue.created, user, "")
-
-        return issue
-
-tkt.commands.aliases("new")(Add)
+tkt.commands.Add.gather_component = gather_component
 
 class Status(tkt.commands.Status):
     usage = "[<component>]"
@@ -119,6 +88,9 @@ class Status(tkt.commands.Status):
             if component in self.project.components:
                 self.display_status([i for i in self.project.issues
                                      if i.component == component])
+            elif component == self.project.name:
+                self.display_status([i for i in self.project.issues
+                    if not i.component or i.component == self.project.name])
             else:
                 self.fail("%s is not a recognized component" % component)
         else:

@@ -72,6 +72,8 @@ class Command(object):
     # usage = "foo [bar]" -> "usage: tkt <commandname> foo [bar] [<options>]"
     usage = ""
 
+    required_data = ["creator"]
+
     if len(sys.argv) > 1 and sys.argv[1] and not sys.argv[1].startswith('-'):
         argv = sys.argv[2:]
     else:
@@ -104,9 +106,15 @@ class Command(object):
             self._options_args = self._build_parser().parse_args(self.argv)
         return self._options_args[1]
 
-    def username(self):
+    def gather_creator(self):
         return "%s <%s>" % (tkt.config.config.username,
                             tkt.config.config.useremail)
+
+    def gather(self):
+        data = {}
+        for name in self.required_data:
+            data[name] = getattr(self, "gather_%s" % name)()
+        return data
 
     def prompt(self, msg):
         print msg,
@@ -172,17 +180,14 @@ class Command(object):
         finally:
             fp.close()
 
-    def store_new_issue(self, title, description, type, user):
-        issue = tkt.models.Issue({
-            'id': uuid.uuid4().hex,
-            'title': title,
-            'description': description,
-            'created': datetime.datetime.now(),
-            'type': dict(tkt.models.Issue.types)[type],
-            'status': 'open',
-            'resolution': None,
-            'creator': user,
-            'events': []})
+    def store_new_issue(self, **data):
+        data['status'] = 'open'
+        data['resolution'] = None
+        data['events'] = data.get('events') or []
+        data['id'] = uuid.uuid4().hex
+        data['created'] = datetime.datetime.now()
+
+        issue = tkt.models.Issue(data)
 
         bisect.insort(self.project.issues, issue)
 
@@ -199,7 +204,8 @@ class Command(object):
             fp.close()
 
         # this dumps the issue too
-        self.store_new_event(issue, "issue created", issue.created, user, "")
+        self.store_new_event(issue, "issue created", issue.created,
+            self.gather_creator(), "")
 
         return issue
 
@@ -294,25 +300,31 @@ class Add(Command):
 
     usageinfo = "create a new ticket"
 
+    required_data = ['title', 'description', 'type', 'creator']
+
     def prepare_options(self):
         self.options[1]['help'] = self.options[1]['help'] % \
                 tkt.models.Issue.types_text()
 
-    def get_data(self):
-        title = self.parsed_options.title or self.prompt("Title:")
+    def gather_title(self):
+        return self.parsed_options.title or self.prompt("Title:")
 
+    def gather_type(self):
         typeoptions = set(pair[0] for pair in tkt.models.Issue.types)
+
         typeprompt = "Type - %s:" % tkt.models.Issue.types_text()
+
         type = self.parsed_options.type or self.prompt(typeprompt)
         while type not in typeoptions:
             type = self.parsed_options.type or self.prompt(typeprompt)
 
-        description = self.editor_prompt("Description")
+        return dict(tkt.models.Issue.types)[type]
 
-        return title, type, description, self.username()
+    def gather_description(self):
+        return self.editor_prompt("Description")
 
     def ttymain(self):
-        self.store_new_issue(*self.get_data())
+        self.store_new_issue(**self.gather())
 
     def pipemain(self):
         self.require_all_options()
@@ -327,7 +339,11 @@ class Add(Command):
 
         description = sys.stdin.read()
 
-        self.store_new_issue(title, description, type, self.username())
+        self.store_new_issue(
+            title=title,
+            description=description,
+            type=type,
+            creator=self.gather_creator())
 
 aliases('new')(Add)
 
@@ -551,7 +567,7 @@ class Close(Command):
             issue,
             "ticket closed",
             datetime.datetime.now(),
-            self.username(),
+            self.gather_creator(),
             self.editor_prompt("Comment"))
 
 aliases('finish', 'end')(Close)
@@ -582,7 +598,7 @@ class Reopen(Command):
             issue,
             "ticket reopened",
             datetime.datetime.now(),
-            self.username(),
+            self.gather_creator(),
             self.editor_prompt("Comment"))
 
     pipmain = ttymain
@@ -610,7 +626,7 @@ class QA(Command):
             issue,
             "ticket sent to QA",
             datetime.datetime.now(),
-            self.username(),
+            self.gather_creator(),
             self.editor_prompt("Comment"))
 
 class Comment(Command):
@@ -633,7 +649,7 @@ class Comment(Command):
             issue,
             "comment added",
             datetime.datetime.now(),
-            self.username(),
+            self.gather_creator(),
             self.editor_prompt("Comment"))
 
 aliases('annotate')(Comment)
@@ -709,19 +725,19 @@ class Edit(Command):
         return isinstance(description, basestring)
 
     def validate_created(self, created):
-        return isinstance(description, datetime.datetime)
+        return isinstance(created, datetime.datetime)
 
     def validate_type(self, type):
-        for char, name in tkt.models.Issues.types:
+        for char, name in tkt.models.Issue.types:
             if name == type:
                 return True
         return False
 
     def validate_status_resolution(self, status, resolution):
         if resolution is None:
-            return status == CLOSED
+            return status != CLOSED
 
-        if status == CLOSED:
+        if status != CLOSED:
             return False
 
         for char, name in tkt.models.Issue.statuses:
@@ -738,6 +754,9 @@ class Edit(Command):
 
     def validate_creator(self, creator):
         return isinstance(creator, basestring)
+
+    def validate_status(self, status):
+        return status in [p[1] for p in tkt.models.Issue.statuses]
 
     def main(self):
         if not (self.parsed_args and self.parsed_args[0]):
@@ -798,7 +817,7 @@ class Edit(Command):
             issue,
             "ticket edited",
             datetime.datetime.now(),
-            self.username(),
+            self.gather_creator(),
             "")
 
 class Start(Command):
@@ -824,7 +843,7 @@ class Start(Command):
             issue,
             "work on ticket started",
             datetime.datetime.now(),
-            self.username(),
+            self.gather_creator(),
             self.editor_prompt("Comment"))
 
 aliases('work')(Start)
@@ -855,7 +874,7 @@ class Stop(Command):
             issue,
             "work on ticket stopped",
             datetime.datetime.now(),
-            self.username(),
+            self.gather_creator(),
             self.editor_prompt("Comment"))
 
 aliases('pause')(Stop)

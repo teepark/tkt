@@ -213,6 +213,17 @@ class Issue(Model):
         (3, "invalid"),
     ]
 
+    display = [
+        "title",
+        "description",
+        "creator",
+        "age",
+        "type",
+        "status",
+        "resolution",
+        "identifier",
+    ]
+
     @classmethod
     def resolutions_text(cls):
         return ", ".join("(%d) %s" % pair for pair in cls.resolutions)
@@ -268,44 +279,50 @@ class Issue(Model):
             self.name.rjust(self.longestname),
             self.title)
 
+    def view_resolution(self):
+        return self.resolution
+
+    def view_title(self):
+        return self.title
+
+    def view_description(self):
+        descr = self.description.splitlines()
+        if len(descr) > 1:
+            return "\n> %s" % "\n> ".join(descr)
+        return descr and descr[0] or ""
+
+    def view_creator(self):
+        return self.creator
+
+    def view_age(self):
+        return "%s ago" % tkt.flextime.since(self.created)
+
+    def view_type(self):
+        return self.type
+
+    def view_status(self):
+        return self.status
+
+    def view_identifier(self):
+        return self.id
+
     def view_detail(self):
-        created = "%s ago" % tkt.flextime.since(self.created)
-
-        if self.status == self.CLOSED and self.resolution:
-            resolution = "\n     Resolution: %s" % self.resolution
-        else:
-            resolution = ""
-
-        description = self.description.splitlines()
-        if len(description) > 1:
-            description = "\n> %s" % "\n> ".join(description)
-        else:
-            description = description and description[0] or ""
+        width = max(map(len, self.display)) + 4
+        contents = "\n".join(
+            "%s: %s" % (item.title().rjust(width),
+                        getattr(self, "view_%s" % item)())
+            for item in self.display
+        )
 
         return '''Issue %s
 %s
-          Title: %s
-    Description: %s
-        Creator: %s
-            Age: %s
-           Type: %s
-         Status: %s%s
-     Identifier: %s
+%s
 
 Event Log:
-%s
-''' % (
-            self.name,
-            '-' * (len(str(self.name)) + 7),
-            self.title,
-            description,
-            self.creator,
-            created,
-            self.type,
-            self.status,
-            resolution,
-            self.id,
-            self.event_log())
+%s''' % (self.name,
+         '-' * (len(str(self.name)) + 6),
+         contents,
+         self.event_log())
 
     def event_log(self):
         return "\n".join(e.view_detail() for e in self.events)
