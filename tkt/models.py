@@ -202,7 +202,7 @@ class Issue(Model):
         ("x", CLOSED),
         ("q", "resolution in QA"),
         ("r", "reopened"),
-        ("_", "open"),
+        ("_", "unstarted"),
         ("=", "paused"),
         (">", "in progress"),
     ]
@@ -217,7 +217,7 @@ class Issue(Model):
         "title",
         "description",
         "creator",
-        "age",
+        "created",
         "type",
         "status",
         "resolution",
@@ -294,7 +294,7 @@ class Issue(Model):
     def view_creator(self):
         return self.creator
 
-    def view_age(self):
+    def view_created(self):
         return "%s ago" % tkt.flextime.since(self.created)
 
     def view_type(self):
