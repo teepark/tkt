@@ -958,3 +958,14 @@ class Log(Command):
             print " " + " | ".join(item)
 
 aliases('shortlog')(Log)
+
+class ImportDitz(Command):
+    usageinfo = "start your new repository from the current ditz repo"
+
+    def main(self):
+        Init().main()
+
+        import tkt.fromditz
+        tkt.fromditz.main()
+
+aliases('fromditz')(ImportDitz)
