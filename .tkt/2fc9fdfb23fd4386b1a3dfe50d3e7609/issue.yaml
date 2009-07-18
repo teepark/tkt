@@ -1,0 +1,20 @@
+component: tkt
+created: 2009-07-10 16:08:45.675718
+creator: Travis Parker <travis.parker@gmail.com>
+description: 'basic approach: http://martyalchin.com/2008/jan/10/simple-plugin-framework/
+
+
+  that, plus an expected set (all optional) of methods on plugin classes and
+
+  matching documentation should be enough'
+events:
+- 8893a10a87784ec79b4349504fef86d6
+- 758a20b494744064b8663c6d7b175bbb
+- 23e6ec1110564c9485372af178a86a15
+- 8448b155500547d98c8c5ec1fd473f97
+id: 2fc9fdfb23fd4386b1a3dfe50d3e7609
+release: '0.1'
+resolution: fixed
+status: closed
+title: plugin architecture
+type: feature

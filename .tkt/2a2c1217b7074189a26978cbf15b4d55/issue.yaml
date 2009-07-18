@@ -1,0 +1,15 @@
+component: tkt
+created: 2009-07-09 18:43:01.776807
+creator: Travis Parker <travis.parker@gmail.com>
+description: for Issues and Projects (others?)
+events:
+- d13307e8daed4732982c10658b00d2ef
+- a18acad2ab9c43089f389492df27b4f8
+- bbde8b1711ac4f6a93be8421376c9d28
+- da93d0d4df90434087a06d62f4b08df5
+id: 2a2c1217b7074189a26978cbf15b4d55
+release: '0.1'
+resolution: fixed
+status: closed
+title: data models
+type: feature

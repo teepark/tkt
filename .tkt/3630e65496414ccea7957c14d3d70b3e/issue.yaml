@@ -1,0 +1,19 @@
+component: tkt
+created: 2009-07-11 00:20:39.762364
+creator: Travis Parker <travis.parker@gmail.com>
+description: 'task is in two parts:
+
+
+  1. get fromditz.py up to the ability to do a translation of a whole project
+
+  2. translate the tkt bugs from ditz to tkt and use that going forward'
+events:
+- 1842bc11fc434d389c4582fcc2151b0e
+- 487f8ea326fd46e98fcd70916398d09d
+- d2636c8d7cc544689e72b930130f95ee
+id: 3630e65496414ccea7957c14d3d70b3e
+release: '0.2'
+resolution: ''
+status: unstarted
+title: self-hosting
+type: feature

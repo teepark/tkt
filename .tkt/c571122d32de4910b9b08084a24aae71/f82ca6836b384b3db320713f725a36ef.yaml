@@ -1,0 +1,10 @@
+comment: 'the top-level main() isn''t attached to Command, it''s just in the commands
+  module
+
+
+  also, Command no longer depends on an unwritten class, I just made the metaclass
+  right there'
+created: 2009-07-11 00:10:43.713572
+creator: Travis Parker <travis.parker@gmail.com>
+id: f82ca6836b384b3db320713f725a36ef
+title: closed with disposition fixed

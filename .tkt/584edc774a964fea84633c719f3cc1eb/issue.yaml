@@ -1,0 +1,19 @@
+component: tkt
+created: 2009-07-15 23:22:45.032773
+creator: Travis Parker <travis.parker@gmail.com>
+description: '1. label
+
+  2. labeled
+
+  3. add-label
+
+  4. unlabel'
+events:
+- 190cb6b32b86412999c44c14dc974ca7
+- 8862b7921c7a4deb8dcee50210986370
+id: 584edc774a964fea84633c719f3cc1eb
+release: '0.2'
+resolution: ''
+status: unstarted
+title: label plugin
+type: feature

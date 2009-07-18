@@ -1,0 +1,21 @@
+component: tkt
+created: 2009-07-15 23:29:43.862004
+creator: Travis Parker <travis.parker@gmail.com>
+description: '1. claim ticket
+
+  2. assign ticket user
+
+  3. ownedby user-regex
+
+  4. unassign ticket
+
+  5. unclaimed'
+events:
+- 7662243037504eccb6bd31b1ed025dcc
+- 7649723b5562445ba693bdf02af5f046
+id: 6f418fdb932c4369ad1ae430d549c265
+release: '0.2'
+resolution: ''
+status: unstarted
+title: issue claiming plugin
+type: feature

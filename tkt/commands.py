@@ -490,16 +490,18 @@ class Todo(Command):
     def main(self):
         self.display_issues(self.project.issues)
 
-        if not self.project.issues:
+    def display_issues(self, issuelist):
+        notclosed = [i for i in issuelist if i.status != CLOSED]
+        issues = self.parsed_options.show_closed and issuelist or notclosed
+
+        for issue in issues:
+            print issue.view_one_line()
+
+        if not issues:
             if self.parsed_options.show_closed:
                 print "no issues"
             else:
                 print "no open issues"
-
-    def display_issues(self, issuelist):
-        for issue in issuelist:
-            if self.parsed_options.show_closed or issue.status != CLOSED:
-                print issue.view_one_line()
 
 class Show(Command):
     usage = "<ticket>"
@@ -686,7 +688,7 @@ class Status(Command):
     usageinfo = 'print a rundown of the progress on all tickets'
 
     def main(self):
-        self.display_status(self.project.issues)
+        print self.display_status(self.project.issues)
 
     def display_status(self, issues):
         tickets = {}
@@ -706,7 +708,7 @@ class Status(Command):
         self.charoptions = [s[0] for s in tkt.models.Issue.statuses]
         issuechars.sort(key=self.issuecharkeyfunc)
 
-        print "%s  %s" % (",  ".join(text), "".join(issuechars))
+        return "%s  %s" % (",  ".join(text), "".join(issuechars))
 
     def issuecharkeyfunc(self, s):
         if s in self.charoptions:

@@ -1,0 +1,19 @@
+component: tkt
+created: 2009-07-09 18:46:33.244603
+creator: Travis Parker <travis.parker@gmail.com>
+description: "create a command base class that:\n - builds an optparse.OptionParser\
+  \ based on overridden subclass attributes\n - has a MetaClass that registers subclasses\
+  \ by name (lowercase name, actually)\n - has a main() that calls the main() of the\
+  \ proper subclass"
+events:
+- 3ece1bb1593648b48428c35067de0714
+- 79d07063d0b24573a57bd62629ec600d
+- 7dfb25892a20474e9d6c5c7e275b9ad0
+- f82ca6836b384b3db320713f725a36ef
+- 6d0b6661eb7f4f3498d5bca3ff12d2d2
+id: c571122d32de4910b9b08084a24aae71
+release: '0.1'
+resolution: fixed
+status: closed
+title: command structure
+type: feature

@@ -1,0 +1,11 @@
+comment: "i have done a bunch of those, here's what's left:\n\n- add to init command,\
+  \ create components field of Project as an empty list\n  - rest of the app knows\
+  \ to treat an empty components field as the project name being the only component\n\
+  - \"set-component\" still needs a name and implementation\n- \"add-component\" still\
+  \ needs a name and implementation\n- add to status command, let it take an argument,\
+  \ then only list status of tickets for that component\n- override edit to allow\
+  \ changing the component"
+created: 2009-07-15 19:45:11.626796
+creator: Travis Parker <travis.parker@gmail.com>
+id: b5bd7bece7394799807b68a1842cfd1b
+title: commented

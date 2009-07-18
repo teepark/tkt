@@ -1,0 +1,27 @@
+component: tkt
+created: 2009-07-15 23:49:56.349492
+creator: Travis Parker <travis.parker@gmail.com>
+description: 'idea needs to be filled out, but:
+
+
+  - a ticket can have multiple dependencies
+
+  - but there can be no cycles
+
+  - the sorting of tickets is overridden by dependency relationships
+
+
+  commands:
+
+  1. add-dependency
+
+  2. drop-dependency'
+events:
+- 0fd87a5fc1984ed5a542c591951763a1
+- f38cf3d07b3141fbbf27958ce33d1f1c
+id: 923ac35d5d7348278460214d42e438b5
+release: '0.2'
+resolution: ''
+status: unstarted
+title: dependencies plugin
+type: feature

@@ -1,0 +1,17 @@
+component: tkt
+created: 2009-07-11 00:12:40.235580
+creator: Travis Parker <travis.parker@gmail.com>
+description: 'ditz uses a pretty good loose dates (11 days ago, "moments ago", etc.)
+
+  let''s do that too'
+events:
+- d5b452be11c146d29b506714db610ce5
+- 61737577afd9485dbc5f3c7ff569e09e
+- 3fcb270cc8c143ab8310f8e25fa4d633
+- 29101b29c2a041b09201ef40ab3a6c26
+id: 10a989311d4a481db9889ed4c6f00c5e
+release: '0.1'
+resolution: fixed
+status: closed
+title: loose dates
+type: feature

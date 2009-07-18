@@ -25,6 +25,46 @@ class Issue(ParentIssue):
 
 tkt.models.Issue = Issue
 
+def todomain(self):
+    releases = self.project.releases
+    for release in releases.keys():
+        if not self.parsed_options.show_closed and releases[release]:
+            continue
+
+        print "Release %s:" % release.title()
+        self.display_issues([i for i in self.project.issues
+                             if i.release == release])
+        print ""
+
+    print "Free Tickets:"
+    self.display_issues([i for i in self.project.issues if not i.release])
+
+tkt.commands.Todo.main = todomain
+
+def statusmain(self):
+    releases = self.project.releases
+
+    releasetexts = []
+    for release in releases.keys():
+        if releases[release]:
+            releasetexts.append("%s (released %s)" % (release,
+                    releases[release].strftime("%Y-%m-%d")))
+        else:
+            releasetexts.append("%s (unreleased)" % release)
+    releasetexts.append("free tickets")
+    longest = max(map(len, releasetexts))
+
+    for i, release in enumerate(releases.keys()):
+        text = self.display_status([iss for iss in self.project.issues
+                                    if iss.release == release])
+        print "%s  %s" % (releasetexts[i].ljust(longest), text)
+
+    text = self.display_status([iss for iss in self.project.issues
+                                if not iss.release])
+    print "%s  %s" % (releasetexts[-1].ljust(longest), text)
+
+tkt.commands.Status.main = statusmain
+
 tkt.commands.Add.usage = "[release [<title>]]"
 tkt.commands.Add.usageinfo = "creates a new ticket or release"
 
@@ -180,7 +220,7 @@ class ChangeLog(tkt.commands.Command):
         released = releases[name]
 
         print "== %s / %s" % (name,
-                released and release.strftime("%Y-%m-%d") or "unreleased")
+                released and released.strftime("%Y-%m-%d") or "unreleased")
 
         empty = True
 
@@ -241,7 +281,6 @@ class Schedule(tkt.commands.Command):
             self.gather_creator(),
             self.editor_prompt("Comment"))
 
-tkt.commands.aliases('assignrelease')(Schedule)
 tkt.commands.aliases('setrelease')(Schedule)
 
 def validate_release(self, release):

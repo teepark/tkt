@@ -79,23 +79,6 @@ def gather_component(self):
 
 tkt.commands.Add.gather_component = gather_component
 
-class Status(tkt.commands.Status):
-    usage = "[<component>]"
-
-    def main(self):
-        if self.parsed_args:
-            component = self.parsed_args[0]
-            if component in self.project.components:
-                self.display_status([i for i in self.project.issues
-                                     if i.component == component])
-            elif component == self.project.name:
-                self.display_status([i for i in self.project.issues
-                    if not i.component or i.component == self.project.name])
-            else:
-                self.fail("%s is not a recognized component" % component)
-        else:
-            super(Status, self).main()
-
 class Component(tkt.commands.Command):
     usage = "<ticket> <component>"
 
