@@ -67,10 +67,17 @@ class Configuration(Model):
 
     def __init__(self, data):
         Model.__init__(self, data)
+        self._filepresent = any(self.__dict__.values())
         for fieldname in self.fields:
             if not getattr(self, fieldname):
                 setattr(self, fieldname,
                         getattr(self, "default_%s" % fieldname)())
+
+    def get(self, name):
+        attr = getattr(self, name, None)
+        if attr is None:
+            return getattr(self, "default_%s" % name)()
+        return attr
 
     @classmethod
     def _find(cls, name, searchhome=False):

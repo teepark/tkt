@@ -13,12 +13,9 @@ tkt.models.Issue.fields.append("component")
 tkt.models.Project.fields.append("components")
 tkt.models.Issue.display.append("component")
 
-ParentIssue = tkt.models.Issue
-class Issue(ParentIssue):
-    def view_component(self):
-        return self.component or self.project.name
-
-tkt.models.Issue = Issue
+def view_component(self):
+    return self.component or self.project.name
+tkt.models.Issue.view_component = view_component
 
 ParentProject = tkt.models.Project
 class Project(ParentProject):

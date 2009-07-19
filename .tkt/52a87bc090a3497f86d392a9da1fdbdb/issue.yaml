@@ -1,0 +1,23 @@
+created: 2009-07-19 07:38:59.866237
+creator: Travis Parker <travis.parker@gmail.com>
+description: 'for these options, project settings override user config:
+
+  - data directory name
+
+  - plugin list
+
+
+  for these, just use the user config:
+
+  - user''s name
+
+  - user''s email'
+events:
+- 0c1482ae29d74e319a7870a432054a4e
+- 3aee71d078554eb29564b678fd4ff439
+id: 52a87bc090a3497f86d392a9da1fdbdb
+release: null
+resolution: null
+status: unstarted
+title: config locations
+type: task

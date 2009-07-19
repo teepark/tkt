@@ -18,12 +18,9 @@ class Project(ParentProject):
 
 tkt.models.Project = Project
 
-ParentIssue = tkt.models.Issue
-class Issue(ParentIssue):
-    def view_release(self):
-        return self.release
-
-tkt.models.Issue = Issue
+def view_release(self):
+    return self.release
+tkt.models.Issue.view_release = view_release
 
 def todomain(self):
     releases = self.project.releases

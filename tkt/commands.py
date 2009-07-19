@@ -181,7 +181,7 @@ class Command(object):
             fp.close()
 
     def store_new_issue(self, **data):
-        data['status'] = 'open'
+        data['status'] = 'unstarted'
         data['resolution'] = None
         data['events'] = data.get('events') or []
         data['id'] = uuid.uuid4().hex
@@ -428,17 +428,17 @@ class Init(Command):
         Command.main(self)
 
     def ttymain(self):
-        default_username = self.configobj.default_username()
+        default_username = self.configobj.get('username')
         username = self.parsed_options.username or \
                 self.prompt("Your Name [%s]:" % default_username) or \
                 default_username
 
-        default_email = self.configobj.default_useremail()
+        default_email = self.configobj.get('useremail')
         useremail = self.parsed_options.useremail or \
                 self.prompt("Your E-Mail [%s]:" % default_email) or \
                 default_useremail
 
-        default_folder = self.configobj.default_datafolder()
+        default_folder = self.configobj.get('datafolder')
         datafolder = self.parsed_options.foldername or \
                 self.prompt("tkt Data Folder [%s]:" % default_folder) or \
                 default_folder
@@ -458,7 +458,8 @@ class Init(Command):
                     break
                 plugins.append(plugin)
 
-        self.store_new_configuration(username, useremail, datafolder)
+        if not self.configobj._filepresent:
+            self.store_new_configuration(username, useremail, datafolder)
 
         self.project.name = projectname
         self.project.plugins = plugins
