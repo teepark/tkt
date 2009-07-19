@@ -156,9 +156,9 @@ class Command(object):
 
     @property
     def project(self):
-        if not hasattr(self, "_project"):
-            self._project = self.load_project()
-        return self._project
+        if not hasattr(tkt.config.config, "project"):
+            tkt.config.config.project = self.load_project()
+        return tkt.config.config.project
 
     def load_project(self):
         # also loads everything else:
@@ -234,12 +234,12 @@ class Command(object):
 
         return event
 
-    def store_new_configuration(self, username, useremail, datafolder, plugins):
+    def store_new_configuration(self, username, useremail, datafolder):
         config = tkt.models.Configuration({
             'username': username,
             'useremail': useremail,
             'datafolder': datafolder,
-            'plugins': plugins})
+        })
 
         rcpath = self.configobj.rcfile()
         fp = open(rcpath, 'w')
@@ -458,9 +458,10 @@ class Init(Command):
                     break
                 plugins.append(plugin)
 
-        self.store_new_configuration(username, useremail, datafolder, plugins)
+        self.store_new_configuration(username, useremail, datafolder)
 
         self.project.name = projectname
+        self.project.plugins = plugins
 
         fp = open(tkt.files.project_filename(), 'w')
         try:

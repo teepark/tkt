@@ -60,14 +60,13 @@ class Model(object):
         return "not implemented"
 
 class Configuration(Model):
-    fields = ['username', 'useremail', 'datafolder', 'plugins']
+    fields = ['username', 'useremail', 'datafolder']
 
     RCFILENAME = '.tktrc.yaml'
     DEFAULT_DATAFOLDER = '.tkt'
 
     def __init__(self, data):
         Model.__init__(self, data)
-        self.plugins = self.plugins or []
         for fieldname in self.fields:
             if not getattr(self, fieldname):
                 setattr(self, fieldname,
@@ -136,9 +135,6 @@ class Configuration(Model):
 
     def default_datafolder(self):
         return self.DEFAULT_DATAFOLDER
-
-    def default_plugins(self):
-        return []
 
 class Event(Model):
     fields = [
@@ -328,10 +324,12 @@ Event Log:
         return "\n".join(e.view_detail() for e in self.events)
 
 class Project(Model):
-    fields = ["name", "issues"]
+    fields = ["name", "issues", "plugins"]
 
     def __init__(self, data):
         Model.__init__(self, data)
+
+        self.plugins = self.plugins or []
 
         issues = []
         for issueid in self.issues or []:

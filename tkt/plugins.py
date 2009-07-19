@@ -3,7 +3,10 @@ import traceback
 
 import tkt.config
 
-for plugin in tkt.config.config.plugins:
+if not hasattr(tkt.config.config, 'project'):
+    tkt.config.config.project = tkt.commands.Command().load_project()
+
+for plugin in tkt.config.config.project.plugins:
     try:
         # plugins are responsible for attaching to the right hooks
         # all we do here is to import them
