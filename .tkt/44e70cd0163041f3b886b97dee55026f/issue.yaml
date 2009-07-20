@@ -1,4 +1,3 @@
-component: tkt
 created: 2009-07-16 10:31:24.814758
 creator: Travis Parker <travis.parker@gmail.com>
 description: instead, glob.glob("datafolder/*/issue.yaml") to get the list
@@ -6,8 +5,9 @@ events:
 - e5fa2cd6ce9a44a8be5714a51593514a
 - 3cb9410a5bc54e27aea2757b19137f37
 - 313051fc9c294f16bd6ed55941b5cccb
+- 7fc9027c05fe4af3bd1cd440f03d5baa
 id: 44e70cd0163041f3b886b97dee55026f
-release: null
+release: '0.3'
 resolution: ''
 status: unstarted
 title: don't store the list of tickets in project.yaml

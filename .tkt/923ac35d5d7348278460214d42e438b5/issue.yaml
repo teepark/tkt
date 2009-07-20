@@ -1,4 +1,3 @@
-component: tkt
 created: 2009-07-15 23:49:56.349492
 creator: Travis Parker <travis.parker@gmail.com>
 description: 'idea needs to be filled out, but:
@@ -10,15 +9,21 @@ description: 'idea needs to be filled out, but:
 
   - the sorting of tickets is overridden by dependency relationships
 
+  - starting a ticket with an open dependency requires a confirmantion,
 
-  commands:
+  - closing a ticket with an open dependency is not allowed (confirm to remove the
+  dependency)
 
-  1. add-dependency
 
-  2. drop-dependency'
+  command:
+
+  depends/dependency <tkt>
+
+  this enters an interactive mode, unless options are provided'
 events:
 - 0fd87a5fc1984ed5a542c591951763a1
 - f38cf3d07b3141fbbf27958ce33d1f1c
+- bcbe1dd2be2b4a86a34b453a2df51f4e
 id: 923ac35d5d7348278460214d42e438b5
 release: '0.2'
 resolution: ''

@@ -1,4 +1,3 @@
-components: []
 issues:
 - 2a2c1217b7074189a26978cbf15b4d55
 - c571122d32de4910b9b08084a24aae71
@@ -16,9 +15,11 @@ issues:
 - 923ac35d5d7348278460214d42e438b5
 - 44e70cd0163041f3b886b97dee55026f
 - 52a87bc090a3497f86d392a9da1fdbdb
+- b6ef7a1dfe2845c8b33c8909aabedda3
 name: tkt
 plugins:
 - tkt.addons.releases
 releases:
   '0.1': 2009-07-13 20:15:16.536228
   '0.2': null
+  '0.3': null
