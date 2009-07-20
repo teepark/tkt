@@ -10,7 +10,7 @@ description: "what the components plugin should accomplish:\n\n - rename tickets
   \ - ditz's \"add-component\" is equally crappy.\n - add to show/view command, let\
   \ argument be a component name,\n   then limit shown tickets to just that component\n\
   \ - override edit command to allow changing the component\n\ni think that's it"
-events:
+eventids:
 - a05063e923024d0fa2ff41ebd13ca2fe
 - b5bd7bece7394799807b68a1842cfd1b
 - f7f4e00479b54629a64d8d5690f01595

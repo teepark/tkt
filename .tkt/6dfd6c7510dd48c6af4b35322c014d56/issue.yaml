@@ -6,7 +6,7 @@ description: "start with feature parity with base ditz:\n\n - components\n - rel
   \ claiming\n\ni also like git integration but it's pretty brittle in ditz\nright\
   \ now, not the model to follow\n\nthen, features in addition to what is found in\
   \ ditz (even plugins):\n\n - dependencies"
-events:
+eventids:
 - 6dc6f2671b8e4fc8b4306f23799b1547
 - 26c3b30b8a3643b7acfedb90c31d82d5
 - ec2be643921349308c63ff5b8cbc768e

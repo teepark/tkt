@@ -20,7 +20,7 @@ description: 'idea needs to be filled out, but:
   depends/dependency <tkt>
 
   this enters an interactive mode, unless options are provided'
-events:
+eventids:
 - 0fd87a5fc1984ed5a542c591951763a1
 - f38cf3d07b3141fbbf27958ce33d1f1c
 - bcbe1dd2be2b4a86a34b453a2df51f4e

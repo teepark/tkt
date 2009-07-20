@@ -5,7 +5,7 @@ description: "create a command base class that:\n - builds an optparse.OptionPar
   \ based on overridden subclass attributes\n - has a MetaClass that registers subclasses\
   \ by name (lowercase name, actually)\n - has a main() that calls the main() of the\
   \ proper subclass"
-events:
+eventids:
 - 3ece1bb1593648b48428c35067de0714
 - 79d07063d0b24573a57bd62629ec600d
 - 7dfb25892a20474e9d6c5c7e275b9ad0

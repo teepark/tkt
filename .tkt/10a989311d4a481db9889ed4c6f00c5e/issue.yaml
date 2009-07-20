@@ -4,7 +4,7 @@ creator: Travis Parker <travis.parker@gmail.com>
 description: 'ditz uses a pretty good loose dates (11 days ago, "moments ago", etc.)
 
   let''s do that too'
-events:
+eventids:
 - d5b452be11c146d29b506714db610ce5
 - 61737577afd9485dbc5f3c7ff569e09e
 - 3fcb270cc8c143ab8310f8e25fa4d633

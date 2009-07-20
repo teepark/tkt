@@ -12,7 +12,7 @@ description: 'for these options, project settings override user config:
   - user''s name
 
   - user''s email'
-events:
+eventids:
 - 0c1482ae29d74e319a7870a432054a4e
 - 3aee71d078554eb29564b678fd4ff439
 - a9fed868192e448f96247d0cae267bd5

@@ -7,7 +7,7 @@ description: 'basic approach: http://martyalchin.com/2008/jan/10/simple-plugin-f
   that, plus an expected set (all optional) of methods on plugin classes and
 
   matching documentation should be enough'
-events:
+eventids:
 - 8893a10a87784ec79b4349504fef86d6
 - 758a20b494744064b8663c6d7b175bbb
 - 23e6ec1110564c9485372af178a86a15

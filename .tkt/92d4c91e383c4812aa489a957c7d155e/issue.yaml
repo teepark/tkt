@@ -32,7 +32,7 @@ description: 'command list without any plugins:
   - todo
 
   - (put more in comments)'
-events:
+eventids:
 - 13e898474ed041a392e2e474315c8b18
 - eec2bb1f57a4469ba32336505f5495c0
 - dd5a6a24602c4056987bd640d260bec1

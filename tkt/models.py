@@ -182,7 +182,7 @@ class Issue(Model):
         "status",
         "resolution",
         "creator",
-        "events",
+        "eventids",
     ]
 
     types = [
@@ -231,31 +231,23 @@ class Issue(Model):
     def resolutions_text(cls):
         return ", ".join("(%d) %s" % pair for pair in cls.resolutions)
 
-    def __init__(self, data):
-        Model.__init__(self, data)
-
-        events = []
-        for eventid in self.events:
-            fp = open(tkt.files.event_filename(self.id, eventid))
-            try:
-                event = Event.load(fp)
-            finally:
-                fp.close()
-            event.issue = self
-            events.append(event)
-        self.events = events
-
-        self.events.sort()
+    @property
+    def events(self):
+        if not hasattr(self, "eventdata"):
+            self.eventdata = events = []
+            for eventid in self.eventids:
+                fp = open(tkt.files.event_filename(self.id, eventid))
+                try:
+                    event = Event.load(fp)
+                finally:
+                    fp.close()
+                event.issue = self
+                events.append(event)
+            events.sort()
+        return self.eventdata
 
     def __lt__(self, other):
         return self.created < other.created
-
-    def dump(self, stream=None):
-        fullevents = self.events
-        self.events = [e.id for e in fullevents]
-        data = Model.dump(self, stream)
-        self.events = fullevents
-        return data
 
     def timezones_to_utc(self):
         self.created = tkt.timezones.to_utc(self.created)
@@ -331,36 +323,34 @@ Event Log:
         return "\n".join(e.view_detail() for e in self.events)
 
 class Project(Model):
-    fields = ["name", "issues", "plugins"]
+    fields = ["name", "issueids", "plugins"]
 
     def __init__(self, data):
         Model.__init__(self, data)
 
         self.plugins = self.plugins or []
 
-        issues = []
-        for issueid in self.issues or []:
-            fp = open(tkt.files.issue_filename(issueid))
-            try:
-                issue = Issue.load(fp)
-                issue.project = self
-                issues.append(issue)
-            finally:
-                fp.close()
-        self.issues = issues
+    @property
+    def issues(self):
+        if not hasattr(self, "issuedata"):
+            issues = []
+            for issueid in self.issueids or []:
+                fp = open(tkt.files.issue_filename(issueid))
+                try:
+                    issue = Issue.load(fp)
+                    issue.project = self
+                    issues.append(issue)
+                finally:
+                    fp.close()
+            self.issuedata = issues
 
-        self.issues.sort()
-        self.assign_issue_names()
+            issues.sort()
+            self.assign_issue_names()
+
+        return self.issuedata
 
     def assign_issue_names(self):
-        longestname = len(str(len(self.issues)))
-        for i, issue in enumerate(self.issues):
-            self.issues[i].name = "#%d" % i
-            self.issues[i].longestname = longestname
-
-    def dump(self, stream=None):
-        fullissues = self.issues
-        self.issues = [i.id for i in fullissues]
-        data = Model.dump(self, stream)
-        self.issues = fullissues
-        return data
+        longestname = len(str(len(self.issuedata)))
+        for i, issue in enumerate(self.issuedata):
+            self.issuedata[i].name = "#%d" % i
+            self.issuedata[i].longestname = longestname

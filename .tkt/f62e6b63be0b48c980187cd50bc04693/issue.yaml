@@ -6,7 +6,7 @@ description: "a couple of options for how to get screen views of Model subclass 
   \ meant to display, teach Command to find the right views\n - view methods of Model\
   \ subclasses, teach Command to call them\n\ni think i like the first one better,\
   \ especially for plugins"
-events:
+eventids:
 - 90566507805f43acb6ff95f11d3776be
 - 4551c5316b2f4c6a9020fd7d0fb08ee7
 - 4680e18e342d40e1a6aad0a272299e0f

@@ -14,12 +14,12 @@ description: 'currently, any time you load a project, it automatically loads eve
   project.issues should be a @property that loads the tickets once for a project,
 
   and same for issue.events'
-events:
+eventids:
 - 4188cc3880cd41f0b3cd9e78bec536b7
 - bb4fec59e6a046458e4d9036d0a073c8
 id: b6ef7a1dfe2845c8b33c8909aabedda3
 release: '0.3'
-resolution: null
-status: unstarted
+resolution: fixed
+status: closed
 title: load tickets and events on-demand
 type: task
