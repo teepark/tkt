@@ -501,9 +501,9 @@ class Todo(Command):
 
         if not issues:
             if self.parsed_options.show_closed:
-                print "no issues"
+                print "no tickets"
             else:
-                print "no open issues"
+                print "no open tickets"
 
 class Show(Command):
     usage = "<ticket>"

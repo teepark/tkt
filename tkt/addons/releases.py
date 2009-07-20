@@ -33,7 +33,7 @@ def todomain(self):
                              if i.release == release])
         print ""
 
-    print "Free Tickets:"
+    print "Unscheduled:"
     self.display_issues([i for i in self.project.issues if not i.release])
 
 tkt.commands.Todo.main = todomain
