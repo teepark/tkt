@@ -283,7 +283,7 @@ class Issue(Model):
     def view_description(self):
         descr = self.description.splitlines()
         if len(descr) > 1:
-            return "\n> %s" % "\n> ".join(descr)
+            return "\n> %s\n" % "\n> ".join(descr)
         return descr and descr[0] or ""
 
     def view_creator(self):
