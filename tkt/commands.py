@@ -189,7 +189,9 @@ class Command(object):
 
         issue = tkt.models.Issue(data)
 
-        bisect.insort(self.project.issues, issue)
+        issuelist = self.project.issues
+        bisect.insort(issuelist, issue)
+        self.project.issues = [i.id for i in issuelist]
 
         issuepath = tkt.files.issue_filename(issue.id)
         issuedir = os.path.abspath(os.path.join(issuepath, os.pardir))
@@ -218,7 +220,9 @@ class Command(object):
             'comment': comment,
         })
 
-        bisect.insort(issue.events, event)
+        eventlist = issue.events
+        bisect.insort(eventlist, event)
+        issue.events = [e.id for e in eventlist]
 
         fp = open(tkt.files.issue_filename(issue.id), 'w')
         try:
