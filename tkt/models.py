@@ -235,7 +235,7 @@ class Issue(Model):
     def events(self):
         if not hasattr(self, "eventdata"):
             self.eventdata = events = []
-            for eventid in self.eventids:
+            for eventid in (self.eventids or []):
                 fp = open(tkt.files.event_filename(self.id, eventid))
                 try:
                     event = Event.load(fp)
