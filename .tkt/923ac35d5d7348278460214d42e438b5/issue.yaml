@@ -24,8 +24,9 @@ eventids:
 - 0fd87a5fc1984ed5a542c591951763a1
 - f38cf3d07b3141fbbf27958ce33d1f1c
 - bcbe1dd2be2b4a86a34b453a2df51f4e
+- 405ea3568e67465ca1935981e629e0bd
 id: 923ac35d5d7348278460214d42e438b5
-release: '0.2'
+release: '0.3'
 resolution: ''
 status: unstarted
 title: dependencies plugin

@@ -17,6 +17,7 @@ description: 'currently, any time you load a project, it automatically loads eve
 eventids:
 - 4188cc3880cd41f0b3cd9e78bec536b7
 - bb4fec59e6a046458e4d9036d0a073c8
+- 91f39366ee8446b4ad5beb18c090641c
 id: b6ef7a1dfe2845c8b33c8909aabedda3
 release: '0.3'
 resolution: fixed
