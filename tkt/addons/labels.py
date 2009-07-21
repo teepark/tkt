@@ -1,3 +1,4 @@
+import collections
 import datetime
 
 import tkt.commands
@@ -51,3 +52,27 @@ class Label(tkt.commands.Command):
                 datetime.datetime.now(),
                 self.gather_creator(),
                 self.editor_prompt("Comment"))
+
+class Labeled(tkt.commands.Command):
+    usage = "[<label>]"
+
+    usageinfo = "show the tickets with a particular label, or any labels"
+
+    def main(self):
+        if not self.parsed_args:
+            self.display_all_labeled()
+        else:
+            label = self.parsed_args[0]
+            for issue in self.project.issues:
+                if label in (issue.labels or []):
+                    print issue.view_one_line()
+
+    def display_all_labeled(self):
+        data = collections.defaultdict(list)
+        for issue in self.project.issues:
+            for label in (issue.labels or []):
+                data[label].append(issue)
+
+        for label, issues in data.iteritems():
+            print "%s\n  %s" % (label, "\n  ".join(
+                i.view_one_line() for i in issues))
