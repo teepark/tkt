@@ -14,6 +14,16 @@ def view_labels(self):
     return ""
 tkt.models.Issue.view_labels = view_labels
 
+def validate_labels(self, labels):
+    if not isinstance(labels, (tuple, list, type(None))):
+        return False
+    if labels:
+        for label in labels:
+            if not isinstance(label, basestring):
+                return False
+    return True
+tkt.commands.Edit.validate_labels = validate_labels
+
 class Label(tkt.commands.Command):
     usage = "<ticket> [<label>]"
 

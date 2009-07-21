@@ -726,6 +726,8 @@ class Edit(Command):
 
     usageinfo = "edit the ticket data directly with your text editor"
 
+    uneditable_fields = ["id", "eventids"]
+
     def validate_title(self, title):
         return isinstance(title, basestring)
 
@@ -760,6 +762,8 @@ class Edit(Command):
         else:
             return False
 
+        return True
+
     def validate_creator(self, creator):
         return isinstance(creator, basestring)
 
@@ -781,7 +785,7 @@ class Edit(Command):
                                           issue.fields)))
         data = {}
         for field in issue.fields:
-            if field in ("events", "id"):
+            if field in self.uneditable_fields:
                 continue
             data[field] = getattr(issue, field)
 
@@ -807,7 +811,7 @@ class Edit(Command):
         for key, value in data.iteritems():
             if key == "status":
                 if not self.validate_status_resolution(value,
-                        data.get('resolutoin')):
+                        data.get('resolution')):
                     self.fail('edited ticket is invalid')
 
             if key == "resolution":
