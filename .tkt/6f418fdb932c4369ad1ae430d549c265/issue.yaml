@@ -1,4 +1,3 @@
-component: tkt
 created: 2009-07-15 23:29:43.862004
 creator: Travis Parker <travis.parker@gmail.com>
 description: '1. claim ticket
@@ -13,9 +12,12 @@ description: '1. claim ticket
 eventids:
 - 7662243037504eccb6bd31b1ed025dcc
 - 7649723b5562445ba693bdf02af5f046
+- 31c0e2ad50634ea9ab4036599f845cb8
+- b1fce13413194ad4918135af5a7f2590
 id: 6f418fdb932c4369ad1ae430d549c265
+labels: null
 release: '0.2'
-resolution: ''
-status: unstarted
+resolution: fixed
+status: closed
 title: issue claiming plugin
 type: feature
