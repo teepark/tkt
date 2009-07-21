@@ -78,13 +78,12 @@ def gather_release(self):
     release = self.parsed_options.release
 
     if release is None and len(self.project.releases) > 0:
-        text = ["Select a release for the ticket:",
-                "0) None (default)"]
+        text = ["0) None (default)"]
         releases = [k for k, v in self.project.releases.items() if not v]
         for i, release in enumerate(releases):
             text.append("%d) %s" % (i + 1, release))
 
-        text[-1] += ":"
+        text.append("Select a release for the ticket:")
 
         while 1:
             index = self.prompt("\n".join(text))
