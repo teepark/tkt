@@ -47,10 +47,13 @@ tkt.models.Issue.view_dependencies = view_dependencies
 oldlt = tkt.models.Issue.__lt__
 def lessthan(self, other):
     "monkeypatch Issue.__lt__ so that ticket sorting considers dependencies"
-    if other in self.deps:
-        return False
-    if self in other.deps:
-        return True
+    if (hasattr(self, 'deps') and hasattr(other, 'deps')):
+        if other in self.deps:
+            return False
+
+        if self in other.deps:
+            return True
+
     return oldlt(self, other)
 
 tkt.models.Project._oldissues = tkt.models.Project.issues
