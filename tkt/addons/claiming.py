@@ -14,7 +14,7 @@ def view_owner(self):
 tkt.models.Issue.view_owner = view_owner
 
 def validate_owner(self, owner):
-    return isinstance(owner, basestring)
+    return isinstance(owner, (basestring, type(None)))
 tkt.commands.Edit.validate_owner = validate_owner
 
 class Claim(tkt.commands.Command):

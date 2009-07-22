@@ -33,8 +33,10 @@ def todomain(self):
                              if i.release == release])
         print ""
 
-    print "Unscheduled:"
-    self.display_issues([i for i in self.project.issues if not i.release])
+    unscheduled = [i for i in self.project.issues if not i.release]
+    if unscheduled:
+        print "Unscheduled:"
+        self.display_issues(unscheduled)
 
 tkt.commands.Todo.main = todomain
 
