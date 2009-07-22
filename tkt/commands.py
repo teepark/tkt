@@ -1007,9 +1007,23 @@ class ImportDitz(Command):
     usageinfo = "start your new repository from the current ditz repo"
 
     def main(self):
+        import tkt.fromditz
+
         Init().main()
 
-        import tkt.fromditz
+        self.project.plugins = list(set(self.project.plugins or []) | set([
+            "tkt.addons.claiming",
+            "tkt.addons.labels",
+            "tkt.addons.releases"]))
+
+        fp = open(tkt.files.project_filename(), 'w')
+        try:
+            self.project.dump(fp)
+        finally:
+            fp.close()
+
+        tkt.plugins.getplugins()
+
         tkt.fromditz.main()
 
 aliases('fromditz')(ImportDitz)

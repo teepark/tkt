@@ -65,6 +65,9 @@ class DitzRelease(yaml.YAMLObject, UTCTimestampSwitcher):
 class DitzIssue(yaml.YAMLObject, UTCTimestampSwitcher):
     yaml_tag = u'!ditz.rubyforge.org,2008-03-06/issue'
 
+class DitzLabel(yaml.YAMLObject, UTCTimestampSwitcher):
+    yaml_tag = u'!ditz.rubyforge.org,2008-03-06/label'
+
 def load_project(ditzdir):
     fp = open(os.path.join(ditzdir, 'project.yaml'))
     try:
@@ -110,7 +113,18 @@ def main():
         else:
             releases[release.name] = None
 
+    tktproj = tkt.commands.Command().load_project()
+    tktproj.releases = tktproj.releases or {}
+    tktproj.releases.update(releases)
+
+    fp = open(tkt.files.project_filename(), 'w')
+    try:
+        tktproj.dump(fp)
+    finally:
+        fp.close()
+
     issues = []
+    events = {}
     for di in (ditzissues + ditzarchived):
         issue = tkt.models.Issue({
             'id': uuid.uuid4().hex,
@@ -123,10 +137,17 @@ def main():
             'status': di.status[1:],
             'resolution': di.disposition and di.disposition[1:] or "",
             'created': tkt.timezones.to_local(di.creation_time),
-            'events': [],
+            'owner': None,
+            'labels': [],
         })
 
-        issue.events = [tkt.models.Event({
+        if hasattr(di, 'labels'):
+            issue.labels = [l.name for l in di.labels]
+
+        if hasattr(di, 'claimer'):
+            issue.owner = di.claimer
+
+        events[issue.id] = [tkt.models.Event({
             'id': uuid.uuid4().hex,
             'title': ev[2],
             'created': tkt.timezones.to_local(ev[0]),
@@ -134,7 +155,7 @@ def main():
             'comment': ev[3],
         }) for ev in di.log_events]
 
-        issue.events.append(tkt.models.Event({
+        events[issue.id].append(tkt.models.Event({
             'id': uuid.uuid4().hex,
             'title': 'ticket imported from ditz',
             'created': datetime.datetime.now(),
@@ -144,17 +165,10 @@ def main():
 
         issues.append(issue)
 
-    tktproject = tkt.models.Project({
-        'releases': releases,
-        'components': components,
-        'name': ditzproject.name,
-        'issues': []})
-    tktproject.issues = issues
-
     for issue in issues:
         os.mkdir(os.path.dirname(tkt.files.issue_filename(issue.id)))
 
-        for ev in issue.events:
+        for ev in events[issue.id]:
             fp = open(tkt.files.event_filename(issue.id, ev.id), 'w')
             try:
                 ev.dump(fp)
@@ -166,12 +180,6 @@ def main():
             issue.dump(fp)
         finally:
             fp.close()
-
-    fp = open(tkt.files.project_filename(), 'w')
-    try:
-        tktproject.dump(fp)
-    finally:
-        fp.close()
 
 
 if __name__ == "__main__":
