@@ -19,7 +19,7 @@ class Project(ParentProject):
 tkt.models.Project = Project
 
 def view_release(self):
-    return self.release
+    return self.release or ""
 tkt.models.Issue.view_release = view_release
 
 def todomain(self):
@@ -273,6 +273,7 @@ class Schedule(tkt.commands.Command):
         else:
             eventtitle = "ticket's scheduled release deleted"
 
+        self.store_issue(issue)
         self.store_new_event(issue,
             eventtitle,
             datetime.datetime.now(),

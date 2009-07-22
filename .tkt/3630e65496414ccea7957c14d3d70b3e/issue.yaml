@@ -6,11 +6,6 @@ description: 'task is in two parts:
   1. get fromditz.py up to the ability to do a translation of a whole project
 
   2. translate the tkt bugs from ditz to tkt and use that going forward'
-eventids:
-- 1842bc11fc434d389c4582fcc2151b0e
-- 487f8ea326fd46e98fcd70916398d09d
-- d2636c8d7cc544689e72b930130f95ee
-- 2331f5de49784a4580dffcb584963253
 id: 3630e65496414ccea7957c14d3d70b3e
 release: '0.2'
 resolution: fixed

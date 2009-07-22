@@ -54,6 +54,7 @@ class Label(tkt.commands.Command):
 
         if label not in labellist:
             labellist.append(label)
+            self.store_issue(data['ticket'])
             self.store_new_event(data['ticket'],
                 "ticket labeled with '%s'" % label,
                 datetime.datetime.now(),
@@ -129,6 +130,7 @@ class Unlabel(tkt.commands.Command):
                     continue
 
         if label:
+            self.store_issue(issue)
             self.store_new_event(issue,
                 "label '%s' removed" % label,
                 datetime.datetime.now(),

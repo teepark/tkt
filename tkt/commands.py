@@ -199,7 +199,7 @@ class Command(object):
         if not os.path.exists(issuedir):
             os.makedirs(issuedir)
 
-        # this dumps the issue too
+        self.store_issue(issue)
         self.store_new_event(issue, "issue created", issue.created,
             self.gather_creator(), "")
 
@@ -216,13 +216,6 @@ class Command(object):
 
         eventlist = issue.events
         bisect.insort(eventlist, event)
-        issue.eventids = [e.id for e in eventlist]
-
-        fp = open(tkt.files.issue_filename(issue.id), 'w')
-        try:
-            issue.dump(fp)
-        finally:
-            fp.close()
 
         fp = open(tkt.files.event_filename(issue.id, event.id), 'w')
         try:
@@ -231,6 +224,13 @@ class Command(object):
             fp.close()
 
         return event
+
+    def store_issue(self, issue):
+        fp = open(tkt.files.issue_filename(issue.id), 'w')
+        try:
+            issue.dump(fp)
+        finally:
+            fp.close()
 
     def store_new_configuration(self, username, useremail, datafolder):
         config = tkt.models.Configuration({
@@ -566,6 +566,7 @@ class Close(Command):
         issue.status = CLOSED
         issue.resolution = self.prompt_resolution()
 
+        self.store_issue(issue)
         self.store_new_event(
             issue,
             "ticket closed",
@@ -597,6 +598,7 @@ class Reopen(Command):
         issue.status = "reopened"
         issue.resolution = None
 
+        self.store_issue(issue)
         self.store_new_event(
             issue,
             "ticket reopened",
@@ -625,6 +627,7 @@ class QA(Command):
         issue.status = "resolution in QA"
         issue.resolution = None
 
+        self.store_issue(issue)
         self.store_new_event(
             issue,
             "ticket sent to QA",
@@ -723,7 +726,7 @@ class Edit(Command):
 
     usageinfo = "edit the ticket data directly with your text editor"
 
-    uneditable_fields = ["id", "eventids"]
+    uneditable_fields = ["id"]
 
     def validate_title(self, title):
         return isinstance(title, basestring)
@@ -825,7 +828,8 @@ class Edit(Command):
 
         issue.__dict__.update(data)
 
-        self.store_new_event( # will also store the issue changes
+        self.store_issue(issue)
+        self.store_new_event(
             issue,
             "ticket edited",
             datetime.datetime.now(),
@@ -856,6 +860,7 @@ class Start(Command):
         issue.status = "in progress"
         issue.resolution = None
 
+        self.store_issue(issue)
         self.store_new_event(
             issue,
             "work on ticket started",
@@ -887,6 +892,7 @@ class Stop(Command):
         issue.status = "paused"
         issue.resolution = None
 
+        self.store_issue(issue)
         self.store_new_event(
             issue,
             "work on ticket stopped",

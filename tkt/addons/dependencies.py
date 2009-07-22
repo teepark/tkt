@@ -119,6 +119,7 @@ class Depend(tkt.commands.Command):
         except RuntimeError:
             self.fail("no cyclic dependencies")
 
+        self.store_issue(issue)
         self.store_new_event(issue,
             "dependency on %s added" % otherissue.name,
             datetime.datetime.now(),

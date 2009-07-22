@@ -183,7 +183,6 @@ class Issue(Model):
         "status",
         "resolution",
         "creator",
-        "eventids",
     ]
 
     types = [
@@ -235,9 +234,13 @@ class Issue(Model):
     @property
     def events(self):
         if not hasattr(self, "eventdata"):
+            eventfiles = glob.glob("%s%s%s%s*.yaml" % (
+                tkt.config.config.datapath, os.sep, self.id, os.sep))
+            eventfiles = [f for f in eventfiles
+                          if os.path.basename(f) != "issue.yaml"]
             self.eventdata = events = []
-            for eventid in (self.eventids or []):
-                fp = open(tkt.files.event_filename(self.id, eventid))
+            for eventfile in eventfiles:
+                fp = open(eventfile)
                 try:
                     event = Event.load(fp)
                 finally:

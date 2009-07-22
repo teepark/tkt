@@ -9,11 +9,6 @@ description: '1. claim ticket
   4. unassign ticket
 
   5. unclaimed'
-eventids:
-- 7662243037504eccb6bd31b1ed025dcc
-- 7649723b5562445ba693bdf02af5f046
-- 31c0e2ad50634ea9ab4036599f845cb8
-- b1fce13413194ad4918135af5a7f2590
 id: 6f418fdb932c4369ad1ae430d549c265
 labels: null
 release: '0.2'

@@ -34,6 +34,7 @@ class Claim(tkt.commands.Command):
 
         issue.owner = tkt.config.config.useremail
 
+        self.store_issue(issue)
         self.store_new_event(issue,
             "ticket claimed",
             datetime.datetime.now(),
@@ -62,6 +63,7 @@ class Assign(tkt.commands.Command):
 
         issue.owner = user
 
+        self.store_issue(issue)
         self.store_new_event(issue,
             "ticket assigned to %s" % user,
             datetime.datetime.now(),
@@ -99,6 +101,7 @@ class Unassign(tkt.commands.Command):
 
         issue.owner = None
 
+        self.store_issue(issue)
         self.store_new_event(issue,
             "ticket owner removed",
             datetime.datetime.now(),

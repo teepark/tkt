@@ -43,15 +43,6 @@ description: 'ditz features to get done in this plugin
   7. changelog <release>
 
   8. releases'
-eventids:
-- fdb3655f70dd44afa6da76b7390d9192
-- 9d5d77a952444c39ba1fb516bc287014
-- c6cbce7f985f4d68918971dff792c166
-- 95b036711cd94681af1a95364cadd6f6
-- 221bbe3585ce4f2fad025edf5f71af4e
-- af5e0298fbb64ad3b7358e456d70f966
-- 98353585e2d74d06a594f9ee755daa20
-- 2aee4a9f07c640d79fe7d68653368da4
 id: fcbee61ca30246f6b40900ea303cc0e0
 release: '0.2'
 resolution: fixed
