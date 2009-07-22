@@ -16,7 +16,7 @@ def validate_dependencies(self, deps):
         return False
     for issue in self.project.issues:
         try:
-            # not the most efficient way of finding cyclic dependencies
+            # not the most efficient way of finding cyclic dependencies...
             get_dependencies(issue)
         except RuntimeError:
             return False
@@ -120,9 +120,85 @@ class Depend(tkt.commands.Command):
         if not issue.dependencies:
             issue.dependencies = []
         issue.dependencies.append(otherissue.id)
+        issue.deps.add(otherissue)
+
+        try:
+            issue.deps.update(get_dependencies(otherissue))
+            get_dependencies(issue)
+        except RuntimeError:
+            self.fail("no cyclic dependencies")
 
         self.store_new_event(issue,
             "dependency on %s added" % otherissue.name,
             datetime.datetime.now(),
             self.gather_creator(),
             self.editor_prompt("Comment"))
+
+tkt.commands.aliases('dependency')(Depend)
+
+oldstartmain = tkt.commands.Start.main
+def startmain(self):
+    issue = self.gather_ticket()
+    self.gather_ticket = lambda: issue
+
+    opendeps = [d for d in issue.deps if d.status != tkt.models.Issue.CLOSED]
+    opendeps = [d for d in opendeps if d.id in issue.dependencies]
+    if opendeps:
+        if opendeps[1:]:
+            print "Ticket has open dependencies %s" % \
+                    ", ".join(d.name for d in opendeps)
+        else:
+            print "Ticket has open dependency %s" % opendeps[0].name
+        response = self.prompt("Start this ticket anyway? [y/N]")
+
+        if not response or response[0].lower() != 'y':
+            return
+
+    oldstartmain(self)
+
+tkt.commands.Start.main = startmain
+
+oldclosemain = tkt.commands.Close.main
+def closemain(self):
+    issue = self.gather_ticket()
+    self.gather_ticket = lambda: issue
+
+    opendeps = [d for d in issue.deps if d.status != tkt.models.Issue.CLOSED]
+    opendeps = [d for d in opendeps if d.id in issue.dependencies]
+    if opendeps:
+        if opendeps[1:]:
+            print "Ticket has open dependencies %s" % \
+                    ", ".join(d.name for d in opendeps)
+        else:
+            print "Ticket has open dependency %s" % opendeps[0].name
+        response = self.prompt("Close this ticket and remove open " +
+                               "depenencies? [y/N]")
+
+        if not response or response[0].lower() != 'y':
+            return
+
+    for baddep in opendeps:
+        issue.dependencies.remove(baddep.id)
+
+    oldclosemain(self)
+
+tkt.commands.Close.main = closemain
+
+olddropmain = tkt.commands.Drop.main
+def dropmain(self):
+    issue = self.gather_ticket()
+    self.gather_ticket = lambda: issue
+
+    for otherissue in self.project.issues:
+        if issue.id in otherissue.dependencies:
+            otherissue.dependencies.remove(issue.id)
+            otherissue.deps = get_dependencies(otherissue)
+            fp = open(tkt.files.issue_filename(otherissue.id), 'w')
+            try:
+                otherissue.dump(fp)
+            finally:
+                fp.close()
+
+    olddropmain(self)
+
+tkt.commands.Drop.main = dropmain

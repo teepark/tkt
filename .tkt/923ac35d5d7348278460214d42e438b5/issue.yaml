@@ -26,11 +26,12 @@ eventids:
 - f38cf3d07b3141fbbf27958ce33d1f1c
 - bcbe1dd2be2b4a86a34b453a2df51f4e
 - 405ea3568e67465ca1935981e629e0bd
+- fac2d65d1f584e81aef6be94bcd63068
 id: 923ac35d5d7348278460214d42e438b5
 labels: null
 owner: null
 release: '0.3'
-resolution: null
-status: in progress
+resolution: fixed
+status: closed
 title: dependencies plugin
 type: feature

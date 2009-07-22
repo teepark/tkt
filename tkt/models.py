@@ -275,7 +275,7 @@ class Issue(Model):
             self.title)
 
     def view_resolution(self):
-        return self.resolution
+        return self.resolution or ''
 
     def view_title(self):
         return self.title

@@ -558,17 +558,18 @@ class Close(Command):
             if resolution in resolutions:
                 return resolutions[resolution]
 
-    def main(self):
+    def gather_ticket(self):
         if not (self.parsed_args and self.parsed_args[0]):
             self.fail("a ticket to close is required")
 
         tktname = self.parsed_args[0]
         for issue in self.project.issues:
             if tktname in issue.valid_names:
-                break
-        else:
-            self.fail("no ticket found with name %s" % tktname)
+                return issue
+        self.fail("no ticket found with name %s" % tktname)
 
+    def main(self):
+        issue = self.gather_ticket()
         issue.status = CLOSED
         issue.resolution = self.prompt_resolution()
 
@@ -668,16 +669,18 @@ class Drop(Command):
 
     usageinfo = "completely purge a ticket from the repository"
 
-    def main(self):
+    def gather_ticket(self):
         if not (self.parsed_args and self.parsed_args[0]):
             self.fail("a ticket to drop is required")
 
         tktname = self.parsed_args[0]
         for issue in self.project.issues:
             if tktname in issue.valid_names:
-                break
-        else:
-            self.fail("no ticket found with name %s" % tktname)
+                return issue
+        self.fail("no ticket found with name %s" % tktname)
+
+    def main(self):
+        issue = self.gather_ticket()
 
         shutil.rmtree(os.path.dirname(tkt.files.issue_filename(issue.id)))
 
@@ -841,16 +844,21 @@ class Start(Command):
 
     usageinfo = "record work started on a ticket"
 
-    def main(self):
+    required_data = ["ticket"]
+
+    def gather_ticket(self):
         if not (self.parsed_args and self.parsed_args[0]):
             self.fail("a ticket to start is required")
 
         tktname = self.parsed_args[0]
         for issue in self.project.issues:
             if tktname in issue.valid_names:
-                break
-        else:
-            self.fail("no ticket found with name %s" % tktname)
+                return issue
+
+        self.fail("no ticket found with name %s" % tktname)
+
+    def main(self):
+        issue = self.gather_ticket()
 
         issue.status = "in progress"
         issue.resolution = None
