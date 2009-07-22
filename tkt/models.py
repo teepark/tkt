@@ -341,10 +341,10 @@ class Project(Model):
                 fp = open(issuefile)
                 try:
                     issue = Issue.load(fp)
-                    issue.project = self
-                    issues.append(issue)
                 finally:
                     fp.close()
+                issue.project = self
+                issues.append(issue)
             self.issuedata = issues
 
             issues.sort()
