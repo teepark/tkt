@@ -176,6 +176,28 @@ def closemain(self):
 
 tkt.commands.Close.main = closemain
 
+oldqamain = tkt.commands.QA.main
+def qamain(self):
+    issue = self.gather_ticket()
+    self.gather_ticket = lambda: issue
+
+    opendeps = [d for d in issue.deps if d.status != tkt.models.Issue.CLOSED]
+    opendeps = [d for d in opendeps if d.id in issue.dependencies]
+    if opendeps:
+        if opendeps[1:]:
+            print "Ticket has open dependencies %s" % \
+                    ", ".join(d.name for d in opendeps)
+        else:
+            print "Ticket has open dependency %s" % opendeps[0].name
+        response = self.prompt("Send this ticket to QA anyway? [y/N]")
+
+        if not response or response[0].lower() != 'y':
+            return
+
+    oldqamain(self)
+
+tkt.commands.QA.main = qamain
+
 olddropmain = tkt.commands.Drop.main
 def dropmain(self):
     issue = self.gather_ticket()

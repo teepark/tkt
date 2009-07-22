@@ -621,16 +621,18 @@ class QA(Command):
 
     usageinfo = "mark a ticket as ready for QA"
 
-    def main(self):
+    def gather_ticket(self):
         if not (self.parsed_args and self.parsed_args[0]):
             self.fail("a ticket to send to QA is required")
 
         tktname = self.parsed_args[0]
         for issue in self.project.issues:
             if tktname in issue.valid_names:
-                break
-        else:
-            self.fail("no ticket found with name %s" % tktname)
+                return issue
+        self.fail("no ticket found with name %s" % tktname)
+
+    def main(self):
+        issue = self.gather_ticket()
 
         issue.status = "resolution in QA"
         issue.resolution = None
