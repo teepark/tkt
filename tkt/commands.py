@@ -540,24 +540,34 @@ class Close(Command):
         'short': '-r',
         'long': '--resolution',
         'help': 'how the ticket was resolved: %s',
-        'type': 'int',
+        'type': 'string',
     }]
+
+    required_data = ["ticket", "resolution"]
 
     def prepare_options(self):
         self.options[0]['help'] = self.options[0]['help'] % \
-                tkt.models.Issue.resolutions_text()
+                tkt.models.Issue.resolutions_text(', ')
 
-    def prompt_resolution(self):
+    def gather_resolution(self):
         resolutions = dict(tkt.models.Issue.resolutions)
+
+        provided = self.parsed_options.resolution
+        if provided and provided.isdigit() and int(provided) in resolutions:
+            return resolutions[int(provided)]
+
+        if provided and provided in resolutions.values():
+            return provided
+
         while 1:
-            resolution = self.prompt("Resolution - %s:" %
+            resolution = self.prompt("%s\nResolution:" %
                     tkt.models.Issue.resolutions_text())
-            try:
-                resolution = int(resolution)
-            except ValueError:
-                continue
-            if resolution in resolutions:
-                return resolutions[resolution]
+
+            if resolution.isdigit() and int(resolution) in resolutions:
+                return resolutions[int(resolution)]
+
+            if resolution in resolutions.values():
+                return resolution
 
     def gather_ticket(self):
         if not (self.parsed_args and self.parsed_args[0]):
@@ -570,9 +580,10 @@ class Close(Command):
         self.fail("no ticket found with name %s" % tktname)
 
     def main(self):
-        issue = self.gather_ticket()
+        data = self.gather()
+        issue = data['ticket']
+        issue.resolution = data['resolution']
         issue.status = CLOSED
-        issue.resolution = self.prompt_resolution()
 
         self.store_issue(issue)
         self.store_new_event(
