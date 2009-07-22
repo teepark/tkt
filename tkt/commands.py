@@ -41,6 +41,14 @@ def main():
 
     cmd.main()
 
+def track_opens():
+    builtinopen = __builtins__.open
+    globals()['openedfiles'] = opened = []
+    def opener(name, mode='rb'):
+        opened.append((name, mode))
+        return builtinopen(name, mode)
+    __builtins__.open = opener
+
 def aliases(*names):
     def decorator(cls):
         for name in names:
