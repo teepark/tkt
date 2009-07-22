@@ -52,32 +52,20 @@ def lessthan(self, other):
     if self in other.deps:
         return True
     return oldlt(self, other)
-tkt.models.Issue.__lt__ = lessthan
 
+tkt.models.Project._oldissues = tkt.models.Project.issues
 def listissues(self):
-    if not hasattr(self, "issuedata"):
-        issues = []
-        for issueid in self.issueids or []:
-            fp = open(tkt.files.issue_filename(issueid))
-            try:
-                issue = tkt.models.Issue.load(fp)
-                issue.project = self
-                issues.append(issue)
-            finally:
-                fp.close()
-        self.issuedata = issues
+    issuelist = self._oldissues
+    if not hasattr(self, "_issues_dependency_sorted"):
+        self._issues_dependency_sorted = 1
 
-        for issue in issues:
+        for issue in issuelist:
             issue.deps = get_dependencies(issue, 0)
 
-        tkt.models.Issue.__lt__ = oldlt
-        issues.sort()
-        self.assign_issue_names()
-
         tkt.models.Issue.__lt__ = lessthan
-        issues.sort()
+        issuelist.sort()
 
-    return self.issuedata
+    return issuelist
 tkt.models.Project.issues = property(listissues)
 
 class Depend(tkt.commands.Command):

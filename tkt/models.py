@@ -1,4 +1,5 @@
 import functools
+import glob
 import operator
 import os
 import stat
@@ -323,7 +324,7 @@ Event Log:
         return "\n".join(e.view_detail() for e in self.events)
 
 class Project(Model):
-    fields = ["name", "issueids", "plugins"]
+    fields = ["name", "plugins"]
 
     def __init__(self, data):
         Model.__init__(self, data)
@@ -333,9 +334,11 @@ class Project(Model):
     @property
     def issues(self):
         if not hasattr(self, "issuedata"):
+            issuefiles = glob.glob("%s%s*%sissue.yaml" % (
+                tkt.config.config.datapath, os.sep, os.sep))
             issues = []
-            for issueid in self.issueids or []:
-                fp = open(tkt.files.issue_filename(issueid))
+            for issuefile in issuefiles:
+                fp = open(issuefile)
                 try:
                     issue = Issue.load(fp)
                     issue.project = self

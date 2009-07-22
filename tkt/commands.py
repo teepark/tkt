@@ -192,19 +192,12 @@ class Command(object):
 
         issuelist = self.project.issues
         bisect.insort(issuelist, issue)
-        self.project.issueids = [i.id for i in issuelist]
 
         issuepath = tkt.files.issue_filename(issue.id)
         issuedir = os.path.abspath(os.path.join(issuepath, os.pardir))
 
         if not os.path.exists(issuedir):
             os.makedirs(issuedir)
-
-        fp = open(tkt.files.project_filename(), 'w')
-        try:
-            self.project.dump(fp)
-        finally:
-            fp.close()
 
         # this dumps the issue too
         self.store_new_event(issue, "issue created", issue.created,
