@@ -7,7 +7,7 @@ import tkt.models
 
 
 tkt.models.Issue.fields.append("release") # string, the name
-tkt.models.Project.fields.append("releases") # list of dicts
+tkt.models.Project.fields.append("releases")
 tkt.models.Issue.display.append("release")
 
 ParentProject = tkt.models.Project
@@ -29,7 +29,7 @@ def todomain(self):
     releasekeys.sort(key=lambda k: (releases[k] or tomorrow, k))
 
     for release in releasekeys:
-        if not self.parsed_options.show_closed and releases[release]:
+        if not self.parsed_options.show_all and releases[release]:
             continue
 
         print "Release %s:" % release.title()

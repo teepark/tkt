@@ -488,8 +488,8 @@ aliases('setup')(Init)
 
 class Todo(Command):
     options = [{
-        'short': '-c',
-        'long': '--show-closed',
+        'short': '-a',
+        'long': '--show-all',
         'help': 'also show closed tickets',
     }]
 
@@ -500,13 +500,13 @@ class Todo(Command):
 
     def display_issues(self, issuelist):
         notclosed = [i for i in issuelist if i.status != CLOSED]
-        issues = self.parsed_options.show_closed and issuelist or notclosed
+        issues = self.parsed_options.show_all and issuelist or notclosed
 
         for issue in issues:
             print issue.view_one_line()
 
         if not issues:
-            if self.parsed_options.show_closed:
+            if self.parsed_options.show_all:
                 print "no tickets"
             else:
                 print "no open tickets"
