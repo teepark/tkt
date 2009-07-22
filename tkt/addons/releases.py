@@ -24,7 +24,11 @@ tkt.models.Issue.view_release = view_release
 
 def todomain(self):
     releases = self.project.releases
-    for release in releases.keys():
+    releasekeys = releases.keys()
+    tomorrow = datetime.datetime.now() + datetime.timedelta(1)
+    releasekeys.sort(key=lambda k: (releases[k] or tomorrow, k))
+
+    for release in releasekeys:
         if not self.parsed_options.show_closed and releases[release]:
             continue
 
@@ -42,9 +46,12 @@ tkt.commands.Todo.main = todomain
 
 def statusmain(self):
     releases = self.project.releases
-
     releasetexts = []
-    for release in releases.keys():
+    releasekeys = releases.keys()
+    tomorrow = datetime.datetime.now() + datetime.timedelta(1)
+    releasekeys.sort(key=lambda k: (releases[k] or tomorrow, k))
+
+    for release in releasekeys:
         if releases[release]:
             releasetexts.append("%s (released %s)" % (release,
                     releases[release].strftime("%Y-%m-%d")))
@@ -53,7 +60,7 @@ def statusmain(self):
     releasetexts.append("free tickets")
     longest = max(map(len, releasetexts))
 
-    for i, release in enumerate(releases.keys()):
+    for i, release in enumerate(releasekeys):
         text = self.display_status([iss for iss in self.project.issues
                                     if iss.release == release])
         print "%s  %s" % (releasetexts[i].ljust(longest), text)
