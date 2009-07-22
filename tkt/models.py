@@ -214,6 +214,7 @@ class Issue(Model):
         (1, "fixed"),
         (2, "won't fix"),
         (3, "invalid"),
+        (4, 'reorganized'),
     ]
 
     display = [
@@ -228,8 +229,8 @@ class Issue(Model):
     ]
 
     @classmethod
-    def resolutions_text(cls):
-        return ", ".join("(%d) %s" % pair for pair in cls.resolutions)
+    def resolutions_text(cls, splitter='\n'):
+        return splitter.join("(%d) %s" % pair for pair in cls.resolutions)
 
     @property
     def events(self):
