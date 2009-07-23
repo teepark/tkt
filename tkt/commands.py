@@ -1,12 +1,10 @@
 import bisect
-import collections
 import datetime
 import functools
 import glob
 import operator
 import optparse
 import os
-import random
 import re
 import shutil
 import stat
@@ -208,7 +206,7 @@ class Command(object):
             os.makedirs(issuedir)
 
         self.store_issue(issue)
-        self.store_new_event(issue, "issue created", issue.created,
+        self.store_new_event(issue, "ticket created", issue.created,
             self.gather_creator(), "")
 
         return issue
