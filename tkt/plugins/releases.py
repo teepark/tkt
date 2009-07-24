@@ -200,7 +200,12 @@ class Releases(tkt.commands.Command):
 
     def main(self):
         releases = self.project.releases
-        for name, released in releases.iteritems():
+        releasekeys = releases.keys()
+        tomorrow = datetime.datetime.now() + datetime.timedelta(1)
+        releasekeys.sort(key=lambda k: (releases[k] or tomorrow, k))
+
+        for name in releasekeys:
+            released = releases[name]
             if released:
                 print name, "(released %s ago)" % tkt.flextime.since(released)
             else:
