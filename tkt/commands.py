@@ -23,7 +23,7 @@ CLOSED = tkt.models.Issue.CLOSED
 DEFAULT = "todo"
 
 def main():
-    import tkt.plugins
+    import tkt.getplugins
     if len(sys.argv) > 1 and sys.argv[1] and not sys.argv[1].startswith('-'):
         arg = sys.argv[1]
     else:
@@ -1020,7 +1020,7 @@ class ImportDitz(Command):
         finally:
             fp.close()
 
-        tkt.plugins.getplugins()
+        tkt.getplugins.getplugins()
 
         tkt.fromditz.main()
 

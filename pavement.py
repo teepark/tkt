@@ -5,7 +5,7 @@ from paver.setuputils import setup
 
 setup(
     name="tkt",
-    packages=["tkt", "tkt.addons"],
+    packages=["tkt", "tkt.plugins"],
     scripts=["scripts/tkt"],
     version="0.2",
     author="Travis Parker",

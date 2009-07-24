@@ -97,7 +97,7 @@ def load_archived_issues(ditzdir):
     return issues
 
 def main():
-    import tkt.plugins
+    import tkt.getplugins
 
     ditzdir = '.ditz'
     ditzproject = load_project(ditzdir)

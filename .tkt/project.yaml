@@ -1,9 +1,9 @@
 name: tkt
 plugins:
-- tkt.addons.releases
-- tkt.addons.labels
-- tkt.addons.claiming
-- tkt.addons.dependencies
+- tkt.plugins.releases
+- tkt.plugins.labels
+- tkt.plugins.claiming
+- tkt.plugins.dependencies
 releases:
   '0.1': 2009-07-13 20:15:16.536228
   '0.2': 2009-07-20 23:46:48.772239
