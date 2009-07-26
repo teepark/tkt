@@ -1,0 +1,25 @@
+created: 2009-07-26 01:39:46.695566
+creator: Travis Parker <travis.parker@gmail.com>
+dependencies: null
+description: 'issues and events are currently placed in the filesystem by a 32-digit
+  random hex string
+
+
+  they will have:
+
+  numerical timestamp of created time and a shorter random hex string, concated together
+
+
+  this way we can sort filenames beforehand, give them numbers/names based on *that*
+  sort,
+
+  and therefore not have to load all of them to figure out what each one''s name/number
+  is'
+id: 67945cd034a54438b576fc33d0e5a769
+labels: null
+owner: null
+release: '0.5'
+resolution: null
+status: unstarted
+title: changes to issue and event sorting
+type: task
