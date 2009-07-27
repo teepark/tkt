@@ -440,7 +440,7 @@ class Init(Command):
         default_email = self.configobj.get('useremail')
         useremail = self.parsed_options.useremail or \
                 self.prompt("Your E-Mail [%s]:" % default_email) or \
-                default_useremail
+                default_email
 
         default_folder = self.configobj.get('datafolder')
         datafolder = self.parsed_options.foldername or \
