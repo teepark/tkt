@@ -148,7 +148,7 @@ def findforname(self, name):
         if name in issue.valid_names:
             return 0, issue
 
-    self.fail("no ticket found with name %s" % tktname)
+    self.fail("no ticket found with name %s" % name)
 
 olddropmain = tkt.commands.Drop.main
 def dropmain(self):
