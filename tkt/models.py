@@ -268,7 +268,7 @@ class Issue(Model):
 
     @property
     def valid_names(self):
-        names = set([self.name, self.id, "%s-%s" % (self.project.name, self.id)])
+        names = set([self.name, self.id])
         if self.name.startswith("#"):
             names.add(self.name[1:])
         return names
