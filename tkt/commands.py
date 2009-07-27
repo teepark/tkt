@@ -1010,9 +1010,9 @@ class ImportDitz(Command):
         Init().main()
 
         self.project.plugins = list(set(self.project.plugins or []) | set([
-            "tkt.addons.claiming",
-            "tkt.addons.labels",
-            "tkt.addons.releases"]))
+            "tkt.plugins.claiming",
+            "tkt.plugins.labels",
+            "tkt.plugins.releases"]))
 
         fp = open(tkt.files.project_filename(), 'w')
         try:
