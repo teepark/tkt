@@ -42,6 +42,9 @@ def todomain(self):
         print "Unscheduled:"
         self.display_issues(unscheduled)
 
+    if not releasekeys and not unscheduled:
+        self.display_issues([])
+
 tkt.commands.Todo.main = todomain
 
 def statusmain(self):
