@@ -1091,7 +1091,7 @@ class Upgrade(Command):
                     fp.close()
 
                 timestamp = int(time.mktime(eventdata['created'].timetuple()))
-                neweventid = "%d-%s" % (hextimestamp(eventdata['created']),
+                neweventid = "%s-%s" % (hextimestamp(eventdata['created']),
                                         eventdata['id'][:8])
                 eventdata['id'] = neweventid
 
