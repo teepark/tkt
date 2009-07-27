@@ -19,7 +19,7 @@ id: 67945cd034a54438b576fc33d0e5a769
 labels: null
 owner: null
 release: '0.5'
-resolution: null
-status: in progress
+resolution: fixed
+status: closed
 title: changes to issue and event sorting
 type: task
