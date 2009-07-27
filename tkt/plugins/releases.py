@@ -28,6 +28,17 @@ def todomain(self):
     tomorrow = datetime.datetime.now() + datetime.timedelta(1)
     releasekeys.sort(key=lambda k: (releases[k] or tomorrow, k))
 
+    if self.parsed_args and self.parsed_args[0]:
+        release = self.parsed_args[0]
+        if release not in releases:
+            self.fail("unrecognized release %s" % release)
+
+        print "Release %s:" % release.title()
+        self.display_issues([i for i in self.project.issues
+                             if i.release == release])
+        print ""
+        return
+
     for release in releasekeys:
         if not self.parsed_options.show_all and releases[release]:
             continue
