@@ -1,0 +1,19 @@
+created: 2009-07-27 18:12:47.722023
+creator: Travis <travis@bromium>
+dependencies: null
+description: 'search is currently an alias for grep. grep will remain the same, search
+
+  will become a new command.
+
+
+  takes options for every issue field, and prints the one-line description
+
+  of every ticket that matches *all* the provided field values'
+id: 4a2486ac284843df93d1e69f69ef7fc1
+labels: null
+owner: null
+release: '0.3'
+resolution: null
+status: unstarted
+title: search command changes
+type: feature
