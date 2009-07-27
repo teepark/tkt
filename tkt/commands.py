@@ -11,6 +11,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import time
 import uuid
 
 import tkt.files
@@ -1025,3 +1026,85 @@ class ImportDitz(Command):
         tkt.fromditz.main()
 
 aliases('fromditz')(ImportDitz)
+
+class Upgrade(Command):
+    usageinfo = "upgrade an old tkt data folder to the latest version"
+
+    usage = "<version>"
+
+    def gather_upgrader(self):
+        if not (self.parsed_args and self.parsed_args[0]):
+            self.fail("a version is required")
+        upgrader = self.upgrades.get(self.parsed_args[0])
+        if not upgrader:
+            self.fail("upgrades are %s" % ", ".join(self.upgrades.keys()))
+        return upgrader
+
+    def point_five_upgrade(self):
+        oldfolders = glob.glob("%s%s*" % (tkt.config.config.datapath, os.sep))
+        oldfolders = filter(os.path.isdir, oldfolders)
+
+        oldidregex = re.compile("^[0-9a-f]{32}$")
+
+        for oldfolder in oldfolders:
+            oldid = oldfolder.split(os.path.sep)[-1]
+
+            if not oldidregex.match(oldid):
+                continue
+
+            oldpath = os.path.join(oldfolder, "issue.yaml")
+
+            fp = open(oldpath)
+            try:
+                issuedata = yaml.load(fp)
+            finally:
+                fp.close()
+
+            timestamp = int(time.mktime(issuedata['created'].timetuple()))
+            newid = "%d-%s" % (timestamp, oldid[:8])
+            issuedata['id'] = newid
+
+            newfolder = os.path.join(os.path.dirname(oldfolder), newid)
+            newpath = os.path.join(newfolder, "issue.yaml")
+
+            os.rename(oldfolder, newfolder)
+
+            fp = open(newpath, 'w')
+            try:
+                yaml.dump(issuedata, fp, default_flow_style=False)
+            finally:
+                fp.close()
+
+            for oldeventfile in glob.glob(os.path.join(newfolder, "*.yaml")):
+                if oldeventfile.endswith("issue.yaml"):
+                    continue
+
+                fp = open(oldeventfile)
+                try:
+                    eventdata = yaml.load(fp)
+                finally:
+                    fp.close()
+
+                timestamp = int(time.mktime(eventdata['created'].timetuple()))
+                neweventid = "%d-%s" % (timestamp, eventdata['id'][:8])
+                eventdata['id'] = neweventid
+
+                neweventfile = os.path.join(os.path.dirname(oldeventfile),
+                                            "%s.yaml" % neweventid)
+
+                fp = open(neweventfile, 'w')
+                try:
+                    yaml.dump(eventdata, fp, default_flow_style=False)
+                finally:
+                    fp.close()
+
+                os.unlink(oldeventfile)
+
+    upgrades = {
+        '0.5': point_five_upgrade,
+    }
+
+    def main(self):
+        upgrader = self.gather_upgrader()
+
+        upgrader(self)
