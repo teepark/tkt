@@ -133,25 +133,20 @@ def main():
     issues = []
     events = {}
     for di in (ditzissues + ditzarchived):
-        try:
-            issue = tkt.models.Issue({
-                'id': uuid.uuid4().hex,
-                'title': di.title,
-                'description': di.desc,
-                'type': di.type[1:],
-                'component': di.component,
-                'release': di.release,
-                'creator': di.reporter,
-                'status': di.status[1:],
-                'resolution': di.disposition and di.disposition[1:] or "",
-                'created': tkt.timezones.to_local(di.creation_time),
-                'owner': None,
-                'labels': [],
-            })
-        except AttributeError:
-            import pprint
-            pprint.pprint(di.__dict__)
-            raise
+        issue = tkt.models.Issue({
+            'id': uuid.uuid4().hex,
+            'title': di.title,
+            'description': di.desc,
+            'type': di.type[1:],
+            'component': di.component,
+            'release': di.release,
+            'creator': di.reporter,
+            'status': di.status[1:],
+            'resolution': di.disposition and di.disposition[1:] or "",
+            'created': tkt.timezones.to_local(di.creation_time),
+            'owner': None,
+            'labels': [],
+        })
 
         if hasattr(di, 'labels'):
             issue.labels = [l.name for l in di.labels]
