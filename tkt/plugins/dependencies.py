@@ -134,7 +134,7 @@ def startmain(self):
     self.gather_ticket = lambda: issue
 
     opendeps = [d for d in issue.deps if d.status != tkt.models.Issue.CLOSED]
-    opendeps = [d for d in opendeps if d.id in issue.dependencies]
+    opendeps = [d for d in opendeps if d.id in (issue.dependencies or [])]
     if opendeps:
         if opendeps[1:]:
             print "Ticket has open dependencies %s" % \
@@ -156,7 +156,7 @@ def closemain(self):
     self.gather_ticket = lambda: issue
 
     opendeps = [d for d in issue.deps if d.status != tkt.models.Issue.CLOSED]
-    opendeps = [d for d in opendeps if d.id in issue.dependencies]
+    opendeps = [d for d in opendeps if d.id in (issue.dependencies or [])]
     if opendeps:
         if opendeps[1:]:
             print "Ticket has open dependencies %s" % \
@@ -169,8 +169,9 @@ def closemain(self):
         if not response or response[0].lower() != 'y':
             return
 
-    for baddep in opendeps:
-        issue.dependencies.remove(baddep.id)
+    if issue.dependencies:
+        for baddep in opendeps:
+            issue.dependencies.remove(baddep.id)
 
     oldclosemain(self)
 
@@ -182,7 +183,7 @@ def qamain(self):
     self.gather_ticket = lambda: issue
 
     opendeps = [d for d in issue.deps if d.status != tkt.models.Issue.CLOSED]
-    opendeps = [d for d in opendeps if d.id in issue.dependencies]
+    opendeps = [d for d in opendeps if d.id in (issue.dependencies or [])]
     if opendeps:
         if opendeps[1:]:
             print "Ticket has open dependencies %s" % \
@@ -204,7 +205,7 @@ def dropmain(self):
     self.gather_ticket = lambda: issue
 
     for otherissue in self.project.issues:
-        if issue.id in otherissue.dependencies:
+        if issue.id in (otherissue.dependencies or []):
             otherissue.dependencies.remove(issue.id)
             otherissue.deps = get_dependencies(otherissue)
             fp = open(tkt.files.issue_filename(otherissue.id), 'w')
