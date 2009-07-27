@@ -53,19 +53,26 @@ class UTCTimestampSwitcher(object):
                 if isinstance(release, UTCTimestampSwitcher):
                     release.timestamps_to_utc()
 
-class DitzProject(yaml.YAMLObject, UTCTimestampSwitcher):
+class DitzThing(yaml.YAMLObject, UTCTimestampSwitcher):
+    def __getattr__(self, name):
+        try:
+            return object.__getattribute__(self, name)
+        except AttributeError:
+            return object.__getattribute__(self, ":%s" % name)
+
+class DitzProject(DitzThing):
     yaml_tag = u'!ditz.rubyforge.org,2008-03-06/project'
 
-class DitzComponent(yaml.YAMLObject, UTCTimestampSwitcher):
+class DitzComponent(DitzThing):
     yaml_tag = u'!ditz.rubyforge.org,2008-03-06/component'
 
-class DitzRelease(yaml.YAMLObject, UTCTimestampSwitcher):
+class DitzRelease(DitzThing):
     yaml_tag = u'!ditz.rubyforge.org,2008-03-06/release'
 
-class DitzIssue(yaml.YAMLObject, UTCTimestampSwitcher):
+class DitzIssue(DitzThing):
     yaml_tag = u'!ditz.rubyforge.org,2008-03-06/issue'
 
-class DitzLabel(yaml.YAMLObject, UTCTimestampSwitcher):
+class DitzLabel(DitzThing):
     yaml_tag = u'!ditz.rubyforge.org,2008-03-06/label'
 
 def load_project(ditzdir):
@@ -126,20 +133,25 @@ def main():
     issues = []
     events = {}
     for di in (ditzissues + ditzarchived):
-        issue = tkt.models.Issue({
-            'id': uuid.uuid4().hex,
-            'title': di.title,
-            'description': di.desc,
-            'type': di.type[1:],
-            'component': di.component,
-            'release': di.release,
-            'creator': di.reporter,
-            'status': di.status[1:],
-            'resolution': di.disposition and di.disposition[1:] or "",
-            'created': tkt.timezones.to_local(di.creation_time),
-            'owner': None,
-            'labels': [],
-        })
+        try:
+            issue = tkt.models.Issue({
+                'id': uuid.uuid4().hex,
+                'title': di.title,
+                'description': di.desc,
+                'type': di.type[1:],
+                'component': di.component,
+                'release': di.release,
+                'creator': di.reporter,
+                'status': di.status[1:],
+                'resolution': di.disposition and di.disposition[1:] or "",
+                'created': tkt.timezones.to_local(di.creation_time),
+                'owner': None,
+                'labels': [],
+            })
+        except AttributeError:
+            import pprint
+            pprint.pprint(di.__dict__)
+            raise
 
         if hasattr(di, 'labels'):
             issue.labels = [l.name for l in di.labels]
