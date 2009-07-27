@@ -55,6 +55,9 @@ def aliases(*names):
         return cls
     return decorator
 
+def hextimestamp(dt):
+    return "%x" % int(time.mktime(dt.timetuple()))
+
 class CommandTracker(type):
     def __init__(cls, name, bases, attrs):
         if not hasattr(cls, 'cmds'):
@@ -189,11 +192,13 @@ class Command(object):
             fp.close()
 
     def store_new_issue(self, **data):
+        dt = datetime.datetime.now()
+        utc = tkt.timezones.to_utc(dt)
         data['status'] = 'unstarted'
         data['resolution'] = None
         data['events'] = data.get('events') or []
-        data['id'] = uuid.uuid4().hex
-        data['created'] = datetime.datetime.now()
+        data['id'] = "%s-%s" % (hextimestamp(utc)[:8], uuid.uuid4().hex[:8])
+        data['created'] = dt
 
         issue = tkt.models.Issue(data)
 
@@ -213,8 +218,9 @@ class Command(object):
         return issue
 
     def store_new_event(self, issue, title, created, creator, comment):
+        utc = tkt.timezones.to_utc(created)
         event = tkt.models.Event({
-            'id': uuid.uuid4().hex,
+            'id': "%s-%s" % (hextimestamp(utc)[:8], uuid.uuid4().hex[:8]),
             'title': title,
             'created': created,
             'creator': creator,
@@ -1060,8 +1066,7 @@ class Upgrade(Command):
             finally:
                 fp.close()
 
-            timestamp = int(time.mktime(issuedata['created'].timetuple()))
-            newid = "%d-%s" % (timestamp, oldid[:8])
+            newid = "%s-%s" % (hextimestamp(issuedata['created']), oldid[:8])
             issuedata['id'] = newid
 
             newfolder = os.path.join(os.path.dirname(oldfolder), newid)
@@ -1086,7 +1091,8 @@ class Upgrade(Command):
                     fp.close()
 
                 timestamp = int(time.mktime(eventdata['created'].timetuple()))
-                neweventid = "%d-%s" % (timestamp, eventdata['id'][:8])
+                neweventid = "%d-%s" % (hextimestamp(eventdata['created']),
+                                        eventdata['id'][:8])
                 eventdata['id'] = neweventid
 
                 neweventfile = os.path.join(os.path.dirname(oldeventfile),
