@@ -1,0 +1,16 @@
+created: 2009-07-27 06:51:50.861193
+creator: Travis Parker <travis.parker@gmail.com>
+dependencies:
+- 67945cd034a54438b576fc33d0e5a769
+description: 'for example, ''tkt close 11'' doesn''t have to load and parse 11 yaml
+  ticket files,
+
+  we can just jump to the 11th one. look for other similar optimizations'
+id: 258400c780304a47a535aef36e1fa8a0
+labels: null
+owner: null
+release: '0.5'
+resolution: null
+status: unstarted
+title: optimizations based on new filename convention
+type: task
