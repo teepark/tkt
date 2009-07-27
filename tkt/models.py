@@ -1,5 +1,6 @@
 import functools
 import glob
+import itertools
 import operator
 import os
 import stat
@@ -8,6 +9,7 @@ import subprocess
 import tkt.files
 import tkt.flextime
 import tkt.timezones
+import tkt.utils
 import yaml
 
 
@@ -44,6 +46,14 @@ class Model(object):
         obj = cls(yaml.load(stream))
         obj.timezones_to_local()
         return obj
+
+    @classmethod
+    def loadfile(cls, filename):
+        fp = open(filename)
+        try:
+            return cls.load(fp)
+        finally:
+            fp.close()
 
     def dump(self, stream=None):
         self.timezones_to_utc()
@@ -191,6 +201,8 @@ class Issue(Model):
         ("t", "task"),
     ]
 
+    longestname = 0
+
     @classmethod
     def types_text(cls):
         text = []
@@ -232,6 +244,11 @@ class Issue(Model):
     def resolutions_text(cls, splitter='\n'):
         return splitter.join("(%d) %s" % pair for pair in cls.resolutions)
 
+    def _load_event(self, filename):
+        event = Event.loadfile(filename)
+        event.issue = self
+        return event
+
     @property
     def events(self):
         if not hasattr(self, "eventdata"):
@@ -239,16 +256,9 @@ class Issue(Model):
                 tkt.config.config.datapath, os.sep, self.id, os.sep))
             eventfiles = [f for f in eventfiles
                           if os.path.basename(f) != "issue.yaml"]
-            self.eventdata = events = []
-            for eventfile in eventfiles:
-                fp = open(eventfile)
-                try:
-                    event = Event.load(fp)
-                finally:
-                    fp.close()
-                event.issue = self
-                events.append(event)
-            events.sort()
+            eventfiles.sort()
+            self.eventdata = tkt.utils.LazyLoadingList(
+                    itertools.imap(self._load_event, eventfiles))
         return self.eventdata
 
     def __lt__(self, other):
@@ -335,29 +345,20 @@ class Project(Model):
 
         self.plugins = self.plugins or []
 
+    def _load_issue(self, number, filename):
+        issue = Issue.loadfile(filename)
+        issue.project = self
+        issue.name = "#%d" % number
+        issue.__class__.longestname = max(len(issue.name),
+                                          issue.__class__.longestname)
+        return issue
+
     @property
     def issues(self):
         if not hasattr(self, "issuedata"):
             issuefiles = glob.glob("%s%s*%sissue.yaml" % (
                 tkt.config.config.datapath, os.sep, os.sep))
-            issues = []
-            for issuefile in issuefiles:
-                fp = open(issuefile)
-                try:
-                    issue = Issue.load(fp)
-                finally:
-                    fp.close()
-                issue.project = self
-                issues.append(issue)
-            self.issuedata = issues
-
-            issues.sort()
-            self.assign_issue_names()
-
+            issuefiles.sort()
+            self.issuedata = tkt.utils.LazyLoadingList(itertools.starmap(
+                self._load_issue, enumerate(issuefiles)))
         return self.issuedata
-
-    def assign_issue_names(self):
-        longestname = len(str(len(self.issuedata)))
-        for i, issue in enumerate(self.issuedata):
-            self.issuedata[i].name = "#%d" % i
-            self.issuedata[i].longestname = longestname
