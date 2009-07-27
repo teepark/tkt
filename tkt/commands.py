@@ -1,4 +1,3 @@
-import bisect
 import datetime
 import functools
 import glob
@@ -203,7 +202,7 @@ class Command(object):
         issue = tkt.models.Issue(data)
 
         issuelist = self.project.issues
-        bisect.insort(issuelist, issue)
+        issuelist.append(issue)
 
         issuepath = tkt.files.issue_filename(issue.id)
         issuedir = os.path.abspath(os.path.join(issuepath, os.pardir))
@@ -228,7 +227,7 @@ class Command(object):
         })
 
         eventlist = issue.events
-        bisect.insort(eventlist, event)
+        eventlist.append(event)
 
         fp = open(tkt.files.event_filename(issue.id, event.id), 'w')
         try:
