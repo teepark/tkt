@@ -57,6 +57,7 @@ def todomain(self):
         self.display_issues([])
 
 tkt.commands.Todo.main = todomain
+tkt.commands.Todo.usage = "[<release>]"
 
 def statusmain(self):
     releases = self.project.releases
