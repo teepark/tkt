@@ -17,7 +17,7 @@ From a downloaded tarball::
   cd tarball-file-name
   sudo python setup.py install
 
-if you are in a virtualenv you won't need the ``sudo``
+If you are in a virtualenv or are root you won't need the "sudo".
 
 Usage
 =================
