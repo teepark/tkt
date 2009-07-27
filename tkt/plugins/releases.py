@@ -112,7 +112,7 @@ tkt.commands.Add.gather_release = gather_release
 
 oldmain = tkt.commands.Add.main
 def addmain(self):
-    if not self.parsed_args:
+    if not self.parsed_args or self.parsed_args[0] != "release":
         oldmain(self)
         return
 
