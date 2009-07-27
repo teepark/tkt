@@ -121,12 +121,12 @@ class Depend(tkt.commands.Command):
 
         self.store_issue(issue)
         self.store_new_event(issue,
-            "dependency on %s added" % otherissue.name,
+            "dependency on %s added" % otherissue.id,
             datetime.datetime.now(),
             self.gather_creator(),
             self.editor_prompt("Comment"))
 
-tkt.commands.aliases('dependency')(Depend)
+tkt.commands.aliases('dependency', 'depends')(Depend)
 
 oldstartmain = tkt.commands.Start.main
 def startmain(self):
