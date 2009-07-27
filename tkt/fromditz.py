@@ -125,9 +125,12 @@ def main():
 
     issues = []
     events = {}
+    now = datetime.datetime.now()
+    utcnow = tkt.timezones.to_utc(now)
     for di in (ditzissues + ditzarchived):
         issue = tkt.models.Issue({
-            'id': uuid.uuid4().hex,
+            'id': "%s-%s" % (tkt.commands.hextimestamp(di.creation_time)[:8],
+                             uuid.uuid4().hex[:8]),
             'title': di.title,
             'description': di.desc,
             'type': di.type[1:],
@@ -148,7 +151,8 @@ def main():
             issue.owner = di.claimer
 
         events[issue.id] = [tkt.models.Event({
-            'id': uuid.uuid4().hex,
+            'id': "%s-%s" % (tkt.commands.hextimestamp(ev[0])[:8],
+                             uuid.uuid4().hex[:8]),
             'title': ev[2],
             'created': tkt.timezones.to_local(ev[0]),
             'creator': ev[1],
@@ -156,9 +160,10 @@ def main():
         }) for ev in di.log_events]
 
         events[issue.id].append(tkt.models.Event({
-            'id': uuid.uuid4().hex,
+            'id': "%s-%s" % (tkt.commands.hextimestamp(utcnow)[:8],
+                             uuid.uuid4().hex[:8]),
             'title': 'ticket imported from ditz',
-            'created': datetime.datetime.now(),
+            'created': now,
             'creator': "%s <%s>" % (config.username, config.useremail),
             'comment': "",
         }))
