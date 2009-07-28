@@ -1,6 +1,7 @@
 import datetime
 import functools
 import glob
+import itertools
 import operator
 import optparse
 import os
@@ -956,7 +957,130 @@ class Grep(Command):
         if not foundone:
             print "no matches found"
 
-aliases('search')(Grep)
+class Search(Command):
+    usageinfo = "search for tickets by field/value"
+
+    options = [
+        {
+            'short': '-i',
+            'long': '--id',
+            'type': 'string',
+            'help': 'the id of a ticket',
+        },
+        {
+            'short': '-n',
+            'long': '--title',
+            'type': 'string',
+            'help': 'the title of a ticket',
+        },
+        {
+            'short': '-c',
+            'long': '--creator',
+            'type': 'string',
+            'help': 'the name or email of the ticket creator',
+        },
+        {
+            'short': '-t',
+            'long': '--type',
+            'type': 'string',
+            'help': 'the type of ticket (%s)',
+        },
+        {
+            'short': '-s',
+            'long': '--status',
+            'type': 'string',
+            'help': 'the current status of the ticket (%s)',
+        },
+        {
+            'short': '-r',
+            'long': '--resolution',
+            'type': 'string',
+            'help': 'the resolution of the ticket (%s)',
+        },
+        {
+            'short': '-d',
+            'long': '--description',
+            'type': 'string',
+            'help': 'a portion of the ticket description',
+        },
+    ]
+
+    def prepare_options(self):
+        self.options[3]['help'] %= ', '.join(p[1] for p in
+                                             tkt.models.Issue.types)
+
+        self.options[4]['help'] %= ', '.join(p[1] for p in
+                                             tkt.models.Issue.statuses)
+
+        self.options[5]['help'] %= ', '.join(p[1] for p in
+                                             tkt.models.Issue.resolutions)
+
+    filters = [
+        "id",
+        "title",
+        "creator",
+        "type",
+        "status",
+        "resolution",
+        "description",
+    ]
+
+    def filter_id(self, issue):
+        if not self.parsed_options.id:
+            return True
+        return self.parsed_options.id.lower() in issue.id.lower()
+
+    def filter_title(self, issue):
+        if not self.parsed_options.title:
+            return True
+        return self.parsed_options.title.lower() in issue.title.lower()
+
+    def filter_creator(self, issue):
+        if not self.parsed_options.creator:
+            return True
+        return self.parsed_options.creator.lower() in issue.creator.lower()
+
+    def filter_type(self, issue):
+        if not self.parsed_options.type:
+            return True
+        return self.parsed_options.type.lower() == issue.type.lower()
+
+    def filter_status(self, issue):
+        if not self.parsed_options.status:
+            return True
+        return self.parsed_options.status.lower() == issue.status.lower()
+
+    def filter_resolution(self, issue):
+        if not self.parsed_options.resolution:
+            return True
+        if self.parsed_options.resolution.lower() in ("null", "none", "nil"):
+            return not issue.resolution
+        return self.parsed_options.resolution.lower() == issue.resolution.lower()
+
+    def filter_description(self, issue):
+        if not self.parsed_options.description:
+            return True
+        return (self.parsed_options.description.lower() in
+                issue.description.lower())
+
+    def run_all_filters(self, issue):
+        return all(getattr(self, "filter_%s" % f)(issue) for f in self.filters)
+
+    def main(self):
+        if not any(getattr(self.parsed_options, i, 0) for i in self.filters):
+            self.fail("at least one of the filtering options is required")
+
+        issues = itertools.ifilter(self.run_all_filters, self.project.issues)
+        at_least_one = False
+
+        for issue in issues:
+            at_least_one = True
+            print issue.view_one_line()
+
+        if not at_least_one:
+            print "no matching tickets"
+
+aliases('find')(Search)
 
 class Log(Command):
     usage = "[<ticket>]"
