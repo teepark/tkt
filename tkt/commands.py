@@ -1049,6 +1049,8 @@ class Search(Command):
     def filter_resolution(self, issue):
         if not self.parsed_options.resolution:
             return True
+        if not issue.resolution:
+            return self.parsed_options.resolution.lower() in self.nulls
         if self.parsed_options.resolution.lower() in self.nulls:
             return not issue.resolution
         return self.parsed_options.resolution.lower() == issue.resolution.lower()
@@ -1056,6 +1058,8 @@ class Search(Command):
     def filter_description(self, issue):
         if not self.parsed_options.description:
             return True
+        if not issue.description:
+            return self.parsed_options.description.lower() in self.nulls
         return (self.parsed_options.description.lower() in
                 issue.description.lower())
 
