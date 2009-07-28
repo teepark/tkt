@@ -8,6 +8,23 @@ import tkt.models
 tkt.models.Issue.fields.append("labels")
 tkt.models.Issue.display.append("labels")
 
+tkt.commands.Search.options.append({
+    'short': '-l',
+    'long': '--label',
+    'type': 'string',
+    'help': 'limit to tickets with the provided label',
+})
+tkt.commands.Search.filters.append("label")
+
+def filter_label(self, issue):
+    if not self.parsed_options.label:
+        return True
+    if not issue.labels:
+        return self.parsed_options.label.lower() in self.nulls
+    return self.parsed_options.label.lower() in \
+            [l.lower() for l in issue.labels]
+tkt.commands.Search.filter_label = filter_label
+
 def view_labels(self):
     return ", ".join(self.labels or [])
 tkt.models.Issue.view_labels = view_labels

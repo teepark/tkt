@@ -1025,6 +1025,8 @@ class Search(Command):
         "description",
     ]
 
+    nulls = set(["null", "none", "nil"])
+
     def filter_id(self, issue):
         if not self.parsed_options.id:
             return True
@@ -1053,7 +1055,7 @@ class Search(Command):
     def filter_resolution(self, issue):
         if not self.parsed_options.resolution:
             return True
-        if self.parsed_options.resolution.lower() in ("null", "none", "nil"):
+        if self.parsed_options.resolution.lower() in self.nulls:
             return not issue.resolution
         return self.parsed_options.resolution.lower() == issue.resolution.lower()
 

@@ -9,6 +9,14 @@ import tkt.models
 tkt.models.Issue.fields.append("owner")
 tkt.models.Issue.display.append("owner")
 
+tkt.commands.Search.options.append({
+    'short': '-o',
+    'long': '--owner',
+    'type': 'string',
+    'help': 'the claimer/owner of the ticket',
+})
+tkt.commands.Search.filters.append("owner")
+
 def view_owner(self):
     return self.owner or "unassigned"
 tkt.models.Issue.view_owner = view_owner
@@ -16,6 +24,14 @@ tkt.models.Issue.view_owner = view_owner
 def validate_owner(self, owner):
     return isinstance(owner, (basestring, type(None)))
 tkt.commands.Edit.validate_owner = validate_owner
+
+def filter_owner(self, issue):
+    if not self.parsed_options.owner:
+        return True
+    if not issue.owner:
+        return self.parsed_options.owner.lower() in self.nulls
+    return self.parsed_options.owner.lower() in issue.owner.lower()
+tkt.commands.Search.filter_owner = filter_owner
 
 class Claim(tkt.commands.Command):
     usage = "<ticket>"
