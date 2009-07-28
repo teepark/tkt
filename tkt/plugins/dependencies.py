@@ -8,6 +8,32 @@ import tkt.models
 tkt.models.Issue.fields.append("dependencies")
 tkt.models.Issue.display.append("dependencies")
 
+tkt.commands.Search.options.append({
+    'short': '-p',
+    'long': '--dependency',
+    'type': 'string',
+    'help': 'limit to tickets which depend on the provided ticket',
+})
+tkt.commands.Search.filters.append("dependency")
+
+def filter_dependency(self, issue):
+    if not self.parsed_options.dependency:
+        return True
+    if not issue.dependencies:
+        return False
+    for iss in self.project.issues:
+        if self.parsed_options.dependency.lower() in iss.valid_names:
+            break
+    else:
+        self.fail("not a valid issue name: %s" %
+                self.parsed_options.dependency)
+
+    if not hasattr(issue, 'deps'):
+        issue.deps = get_dependencies(issue)
+
+    return iss in issue.deps
+tkt.commands.Search.filter_dependency = filter_dependency
+
 def validate_dependencies(self, deps):
     depset = set(deps or [])
     if len(deps) > len(depset):
