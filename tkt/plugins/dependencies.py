@@ -20,7 +20,7 @@ def filter_dependency(self, issue):
     if not self.parsed_options.dependency:
         return True
     if not issue.dependencies:
-        return False
+        return self.parsed_options.dependency.lower() in self.nulls
     for iss in self.project.issues:
         if self.parsed_options.dependency.lower() in iss.valid_names:
             break

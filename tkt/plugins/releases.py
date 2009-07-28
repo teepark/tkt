@@ -10,6 +10,22 @@ tkt.models.Issue.fields.append("release") # string, the name
 tkt.models.Project.fields.append("releases")
 tkt.models.Issue.display.append("release")
 
+tkt.commands.Search.options.append({
+    'short': '-e',
+    'long': '--release',
+    'type': 'string',
+    'help': 'limit the tickets to a release',
+})
+tkt.commands.Search.filters.append("release")
+
+def filter_release(self, issue):
+    if not self.parsed_options.release:
+        return True
+    if not issue.release:
+        return self.parsed_options.release.lower() in self.nulls
+    return self.parsed_options.release.lower() == issue.release.lower()
+tkt.commands.Search.filter_release = filter_release
+
 ParentProject = tkt.models.Project
 class Project(ParentProject):
     def __init__(self, data):
@@ -148,7 +164,8 @@ def addmain(self):
         fp.close()
 tkt.commands.Add.main = addmain
 
-tkt.commands.Drop.usageinfo = "completely purge a ticket or release from the repository"
+tkt.commands.Drop.usageinfo = "completely purge a ticket or release from " + \
+        "the repository"
 tkt.commands.Drop.usage = "[<name>]"
 
 def findforname(self, name):
