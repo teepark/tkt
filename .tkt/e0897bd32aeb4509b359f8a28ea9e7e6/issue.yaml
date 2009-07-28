@@ -11,4 +11,4 @@ release: '0.3'
 resolution: fixed
 status: closed
 title: don't store events in issue.py
-type: t
+type: task
