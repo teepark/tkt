@@ -29,7 +29,7 @@ def filter_owner(self, issue):
     if not self.parsed_options.owner:
         return True
     if not issue.owner:
-        return self.parsed_options.owner.lower() in ("null", "none", "nil")
+        return self.parsed_options.owner.lower() in self.nulls
     return self.parsed_options.owner.lower() in issue.owner.lower()
 tkt.commands.Search.filter_owner = filter_owner
 

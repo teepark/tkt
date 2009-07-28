@@ -20,7 +20,7 @@ def filter_label(self, issue):
     if not self.parsed_options.label:
         return True
     if not issue.labels:
-        return False
+        return self.parsed_options.label.lower() in self.nulls
     return self.parsed_options.label.lower() in \
             [l.lower() for l in issue.labels]
 tkt.commands.Search.filter_label = filter_label

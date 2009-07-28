@@ -13,7 +13,7 @@ id: 4a2486ac284843df93d1e69f69ef7fc1
 labels: null
 owner: null
 release: '0.3'
-resolution: null
-status: reopened
+resolution: fixed
+status: closed
 title: search command changes
 type: feature
