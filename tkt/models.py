@@ -191,6 +191,8 @@ class Issue(Model):
         ("t", "task"),
     ]
 
+    type_map = dict(p[::-1] for p in types)
+
     @classmethod
     def types_text(cls):
         text = []
@@ -274,8 +276,9 @@ class Issue(Model):
         return names
 
     def view_one_line(self):
-        return "%s %s: %s" % (
+        return "%s %s %s: %s" % (
             self.view_one_char(),
+            self.type_map[self.type],
             self.name.rjust(self.longestname),
             self.title)
 
