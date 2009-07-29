@@ -140,7 +140,7 @@ class Command(object):
 
         found = False
         for index, filename in enumerate(self.project.issue_filenames):
-            if tktname in os.path.basename(filename):
+            if tktname in os.path.abspath(filename).split(os.sep)[-2]:
                 if found:
                     self.fail("more than one ticket matches '%s'" % tktname)
                 issue = (index, filename)
