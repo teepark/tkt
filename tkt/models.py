@@ -240,6 +240,8 @@ class Issue(Model):
         "identifier",
     ]
 
+    longestname = 0
+
     @classmethod
     def resolutions_text(cls, splitter='\n'):
         return splitter.join("(%d) %s" % pair for pair in cls.resolutions)
@@ -355,11 +357,17 @@ class Project(Model):
         return issue
 
     @property
+    def issue_filenames(self):
+        if not hasattr(self, "_issue_filenames"):
+            self._issue_filenames = names = glob.glob("%s%s*%sissue.yaml" % (
+                    tkt.config.config.datapath, os.sep, os.sep))
+            names.sort()
+        return self._issue_filenames
+
+    @property
     def issues(self):
         if not hasattr(self, "issuedata"):
-            issuefiles = glob.glob("%s%s*%sissue.yaml" % (
-                tkt.config.config.datapath, os.sep, os.sep))
-            issuefiles.sort()
+            issuefiles = self.issue_filenames
             self.issuedata = tkt.utils.LazyLoadingList(itertools.starmap(
                 self._load_issue, enumerate(issuefiles)))
         return self.issuedata

@@ -120,6 +120,40 @@ class Command(object):
         return "%s <%s>" % (tkt.config.config.username,
                             tkt.config.config.useremail)
 
+    def gather_ticket(self, try_prompting=True, prompt="Ticket:"):
+        if not (self.parsed_args and self.parsed_args[0]):
+            if try_prompting:
+                tktname = self.prompt(prompt)
+            else:
+                self.fail("a ticket argument is required")
+        else:
+            tktname = self.parsed_args[0]
+
+        if tktname.startswith("#"):
+            tktname = tktname[1:]
+
+        if tktname.isdigit():
+            t = int(tktname)
+            if t >= len(self.project.issue_filenames):
+                self.fail("there is no ticket #%d" % t)
+            return self.project._load_issue(t, self.project.issue_filenames[t])
+
+        found = False
+        for index, filename in enumerate(self.project.issue_filenames):
+            if tktname in os.path.basename(filename):
+                if found:
+                    self.fail("more than one ticket matches '%s'" % tktname)
+                issue = (index, filename)
+                found = True
+        if found:
+            return self.project._load_issue(*issue)
+
+        for issue in self.project.issues:
+            if tktname in issue.valid_names:
+                return issue
+
+        self.fail("no ticket found with name %s" % tktname)
+
     def gather(self):
         data = {}
         for name in self.required_data:
@@ -517,27 +551,17 @@ class Todo(Command):
                 print "no open tickets"
 
 class Show(Command):
-    usage = "<ticket>"
+    usage = "[<ticket>]"
 
     usageinfo = "display a ticket in detail"
 
     def main(self):
-        if not (self.parsed_args and self.parsed_args[0]):
-            self.fail("a ticket to show is required")
-
-        tktname = self.parsed_args[0]
-        for issue in self.project.issues:
-            if tktname in issue.valid_names:
-                break
-        else:
-            self.fail("no ticket found with name %s" % tktname)
-
-        print issue.view_detail()
+        print self.gather_ticket().view_detail()
 
 aliases('view')(Show)
 
 class Close(Command):
-    usage = '<ticket>'
+    usage = '[<ticket>]'
 
     usageinfo = "mark a ticket as closed"
 
@@ -574,16 +598,6 @@ class Close(Command):
             if resolution in resolutions.values():
                 return resolution
 
-    def gather_ticket(self):
-        if not (self.parsed_args and self.parsed_args[0]):
-            self.fail("a ticket to close is required")
-
-        tktname = self.parsed_args[0]
-        for issue in self.project.issues:
-            if tktname in issue.valid_names:
-                return issue
-        self.fail("no ticket found with name %s" % tktname)
-
     def main(self):
         data = self.gather()
         issue = data['ticket']
@@ -601,20 +615,12 @@ class Close(Command):
 aliases('finish', 'end')(Close)
 
 class Reopen(Command):
-    usage = '<ticket>'
+    usage = '[<ticket>]'
 
     usageinfo = "reopen a closed ticket"
 
-    def ttymain(self):
-        if not (self.parsed_args and self.parsed_args[0]):
-            self.fail("a ticket to reopen is required")
-
-        tktname = self.parsed_args[0]
-        for issue in self.project.issues:
-            if tktname in issue.valid_names:
-                break
-        else:
-            self.fail("no ticket found with name %s" % tktname)
+    def main(self):
+        issue = self.gather_ticket()
 
         if issue.status != CLOSED:
             self.fail("ticket %s isn't closed, you dummy!" % tktname)
@@ -630,22 +636,10 @@ class Reopen(Command):
             self.gather_creator(),
             self.editor_prompt("Comment"))
 
-    pipmain = ttymain
-
 class QA(Command):
-    usage = '<ticket>'
+    usage = '[<ticket>]'
 
     usageinfo = "mark a ticket as ready for QA"
-
-    def gather_ticket(self):
-        if not (self.parsed_args and self.parsed_args[0]):
-            self.fail("a ticket to send to QA is required")
-
-        tktname = self.parsed_args[0]
-        for issue in self.project.issues:
-            if tktname in issue.valid_names:
-                return issue
-        self.fail("no ticket found with name %s" % tktname)
 
     def main(self):
         issue = self.gather_ticket()
@@ -662,23 +656,14 @@ class QA(Command):
             self.editor_prompt("Comment"))
 
 class Comment(Command):
-    usage = '<ticket>'
+    usage = '[<ticket>]'
 
     usageinfo = "add a comment to a ticket"
 
     def main(self):
-        if not (self.parsed_args and self.parsed_args[0]):
-            self.fail("a ticket to comment is required")
-
-        tktname = self.parsed_args[0]
-        for issue in self.project.issues:
-            if tktname in issue.valid_names:
-                break
-        else:
-            self.fail("no ticket found with name %s" % tktname)
 
         self.store_new_event(
-            issue,
+            self.gather_ticket(),
             "comment added",
             datetime.datetime.now(),
             self.gather_creator(),
@@ -687,19 +672,9 @@ class Comment(Command):
 aliases('annotate')(Comment)
 
 class Drop(Command):
-    usage = '<ticket>'
+    usage = '[<ticket>]'
 
     usageinfo = "completely purge a ticket from the repository"
-
-    def gather_ticket(self):
-        if not (self.parsed_args and self.parsed_args[0]):
-            self.fail("a ticket to drop is required")
-
-        tktname = self.parsed_args[0]
-        for issue in self.project.issues:
-            if tktname in issue.valid_names:
-                return issue
-        self.fail("no ticket found with name %s" % tktname)
 
     def main(self):
         issue = self.gather_ticket()
@@ -748,7 +723,7 @@ class Status(Command):
         return -1
 
 class Edit(Command):
-    usage = "<ticket>"
+    usage = "[<ticket>]"
 
     usageinfo = "edit the ticket data directly with your text editor"
 
@@ -797,15 +772,7 @@ class Edit(Command):
         return status in [p[1] for p in tkt.models.Issue.statuses]
 
     def main(self):
-        if not (self.parsed_args and self.parsed_args[0]):
-            self.fail("a ticket to edit is required")
-
-        tktname = self.parsed_args[0]
-        for issue in self.project.issues:
-            if tktname in issue.valid_names:
-                break
-        else:
-            self.fail("no ticket found with name %s" % tktname)
+        issue = self.gather_ticket()
 
         data = dict(zip(issue.fields, map(functools.partial(getattr, issue),
                                           issue.fields)))
@@ -863,22 +830,11 @@ class Edit(Command):
             self.editor_prompt("Comment"))
 
 class Start(Command):
-    usage = "<ticket>"
+    usage = "[<ticket>]"
 
     usageinfo = "record work started on a ticket"
 
     required_data = ["ticket"]
-
-    def gather_ticket(self):
-        if not (self.parsed_args and self.parsed_args[0]):
-            self.fail("a ticket to start is required")
-
-        tktname = self.parsed_args[0]
-        for issue in self.project.issues:
-            if tktname in issue.valid_names:
-                return issue
-
-        self.fail("no ticket found with name %s" % tktname)
 
     def main(self):
         issue = self.gather_ticket()
@@ -897,20 +853,12 @@ class Start(Command):
 aliases('work')(Start)
 
 class Stop(Command):
-    usage = "<ticket>"
+    usage = "[<ticket>]"
 
     usageinfo = "record work stopped on a ticket"
 
     def main(self):
-        if not (self.parsed_args and self.parsed_args[0]):
-            self.fail("a ticket to stop is required")
-
-        tktname = self.parsed_args[0]
-        for issue in self.project.issues:
-            if tktname in issue.valid_names:
-                break
-        else:
-            self.fail("no ticket found with name %s" % tktname)
+        issue = self.gather_ticket()
 
         if issue.status != "in progress":
             self.fail("ticket %s isn't in progress, you dummy!" % tktname)
@@ -948,6 +896,7 @@ class Grep(Command):
         matches = map(regex.search, output.splitlines())
         matches = set(match.groups()[0] for match in matches if match)
 
+        #TODO: load only the ones we need
         foundone = False
         for issue in self.project.issues:
             if issue.id in matches:

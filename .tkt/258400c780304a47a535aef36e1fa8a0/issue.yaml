@@ -10,7 +10,7 @@ id: 258400c780304a47a535aef36e1fa8a0
 labels: null
 owner: null
 release: '0.5'
-resolution: null
-status: unstarted
+resolution: fixed
+status: closed
 title: optimizations based on new filename convention
 type: task

@@ -103,33 +103,12 @@ class Depend(tkt.commands.Command):
     usageinfo = "note that one ticket depends on another"
 
     def main(self):
-        if not (self.parsed_args and self.parsed_args[0]):
-            self.fail("a ticket set a dependency for is required")
+        issue = self.gather_ticket(try_prompting=False)
 
-        tktname = self.parsed_args[0]
-        for issue in self.project.issues:
-            if tktname in issue.valid_names:
-                break
-        else:
-            self.fail("no ticket found with name %s" % tktname)
+        self.parsed_args.pop(0)
 
-        if self.parsed_args[1:]: # [<dependency>] provided
-            tktname = self.parsed_args[1]
-            for otherissue in self.project.issues:
-                if tktname in otherissue.valid_names:
-                    break
-            else:
-                self.fail("no ticket found with name %s" % tktname)
-        else:
-            while 1:
-                tktname = self.prompt("ticket %s depends on:" % issue.name)
-                for otherissue in self.project.issues:
-                    if tktname in otherissue.valid_names:
-                        break
-                else:
-                    sys.stderr.write("no ticket found with name %s\n" % tktname)
-                    continue
-                break
+        otherissue = self.gather_ticket(
+                prompt="Ticket %s depends on:" % issue.name)
 
         if issue.id == otherissue.id:
             self.fail("an issue can't depend on itself")
@@ -159,6 +138,9 @@ def startmain(self):
     issue = self.gather_ticket()
     self.gather_ticket = lambda: issue
 
+    if not hasattr(issue, 'deps'):
+        issue.deps = get_dependencies(issue)
+
     opendeps = [d for d in issue.deps if d.status != tkt.models.Issue.CLOSED]
     opendeps = [d for d in opendeps if d.id in (issue.dependencies or [])]
     if opendeps:
@@ -180,6 +162,9 @@ oldclosemain = tkt.commands.Close.main
 def closemain(self):
     issue = self.gather_ticket()
     self.gather_ticket = lambda: issue
+
+    if not hasattr(issue, 'deps'):
+        issue.deps = get_dependencies(issue)
 
     opendeps = [d for d in issue.deps if d.status != tkt.models.Issue.CLOSED]
     opendeps = [d for d in opendeps if d.id in (issue.dependencies or [])]

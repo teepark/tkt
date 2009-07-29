@@ -34,20 +34,12 @@ def filter_owner(self, issue):
 tkt.commands.Search.filter_owner = filter_owner
 
 class Claim(tkt.commands.Command):
-    usage = "<ticket>"
+    usage = "[<ticket>]"
 
     usageinfo = "take responsibility for a ticket"
 
     def main(self):
-        if not (self.parsed_args and self.parsed_args[0]):
-            self.fail("a ticket to claim is required")
-        tktname = self.parsed_args[0]
-        for issue in self.project.issues:
-            if tktname in issue.valid_names:
-                break
-        else:
-            self.fail("no ticket found with name %s" % tktname)
-
+        issue = self.gather_ticket()
         issue.owner = tkt.config.config.useremail
 
         self.store_issue(issue)
@@ -58,30 +50,26 @@ class Claim(tkt.commands.Command):
             self.editor_prompt("Comment"))
 
 class Assign(tkt.commands.Command):
-    usage = "<ticket> [<user's email>]"
+    usage = "[<ticket>]"
+
+    options = [{
+        'short': '-u',
+        'long': '--user',
+        'type': 'string',
+        'help': "the email address of the assigned developer",
+    }]
 
     usageinfo = "assign a ticket to someone"
 
     def main(self):
-        if not (self.parsed_args and self.parsed_args[0]):
-            self.fail("a ticket to assign is required")
-        tktname = self.parsed_args[0]
-        for issue in self.project.issues:
-            if tktname in issue.valid_names:
-                break
-        else:
-            self.fail("no ticket found with name %s" % tktname)
+        issue = self.gather_ticket()
 
-        if self.parsed_args[1:]:
-            user = self.parsed_args[1]
-        else:
-            user = self.prompt("Email of user ticket is assigned to:")
-
-        issue.owner = user
+        issue.owner = self.parsed_options.user or self.prompt(
+                "E-mail of developer the ticket is assigned to:")
 
         self.store_issue(issue)
         self.store_new_event(issue,
-            "ticket assigned to %s" % user,
+            "ticket assigned to %s" % issue.owner,
             datetime.datetime.now(),
             self.gather_creator(),
             self.editor_prompt("Comment"))
@@ -101,19 +89,12 @@ class Ownedby(tkt.commands.Command):
                 print issue.view_one_line()
 
 class Unassign(tkt.commands.Command):
-    usage = "<ticket>"
+    usage = "[<ticket>]"
 
     usageinfo = "remove ticket owner"
 
     def main(self):
-        if not (self.parsed_args and self.parsed_args[0]):
-            self.fail("a ticket to unassign is required")
-        tktname = self.parsed_args[0]
-        for issue in self.project.issues:
-            if tktname in issue.valid_names:
-                break
-        else:
-            self.fail("no ticket found with name %s" % tktname)
+        issue = self.gather_ticket()
 
         issue.owner = None
 

@@ -46,15 +46,6 @@ class Label(tkt.commands.Command):
 
     required_data = ["ticket", "label"]
 
-    def gather_ticket(self):
-        if not (self.parsed_args and self.parsed_args[0]):
-            self.fail("a ticket to label is required")
-        tktname = self.parsed_args[0]
-        for issue in self.project.issues:
-            if tktname in issue.valid_names:
-                return issue
-        self.fail("no ticket found with name %s" % tktname)
-
     def gather_label(self):
         if self.parsed_args[1:]:
             return self.parsed_args[1]
@@ -62,17 +53,18 @@ class Label(tkt.commands.Command):
         return self.prompt("Label:")
 
     def main(self):
-        data = self.gather()
+        ticket = self.gather_ticket(try_prompting=False)
 
-        labellist = data['ticket'].labels
+        labellist = ticket.labels
         if not labellist:
-            data['ticket'].labels = labellist = []
-        label = data['label']
+            ticket.labels = labellist = []
+
+        label = self.gather_label()
 
         if label not in labellist:
             labellist.append(label)
-            self.store_issue(data['ticket'])
-            self.store_new_event(data['ticket'],
+            self.store_issue(ticket)
+            self.store_new_event(ticket,
                 "ticket labeled with '%s'" % label,
                 datetime.datetime.now(),
                 self.gather_creator(),
@@ -107,17 +99,8 @@ class Unlabel(tkt.commands.Command):
 
     usageinfo = "remove a label from a ticket"
 
-    def gather_ticket(self):
-        if not (self.parsed_args and self.parsed_args[0]):
-            self.fail("a ticket to label is required")
-        tktname = self.parsed_args[0]
-        for issue in self.project.issues:
-            if tktname in issue.valid_names:
-                return issue
-        self.fail("no ticket found with name %s" % tktname)
-
     def main(self):
-        issue = self.gather_ticket()
+        issue = self.gather_ticket(try_prompting=False)
 
         if self.parsed_args[1:]:
             label = self.parsed_args[1]
