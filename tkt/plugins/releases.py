@@ -7,7 +7,7 @@ import tkt.models
 
 
 tkt.models.Issue.fields.append("release") # string, the name
-tkt.models.Project.fields.append("releases")
+tkt.models.ProjectConfig.fields.append("releases")
 tkt.models.Issue.display.append("release")
 
 tkt.commands.Search.options.append({
@@ -26,13 +26,13 @@ def filter_release(self, issue):
     return self.parsed_options.release.lower() == issue.release.lower()
 tkt.commands.Search.filter_release = filter_release
 
-ParentProject = tkt.models.Project
+ParentProject = tkt.models.ProjectConfig
 class Project(ParentProject):
     def __init__(self, data):
         ParentProject.__init__(self, data)
         self.releases = self.releases or {}
 
-tkt.models.Project = Project
+tkt.models.ProjectConfig = Project
 
 def view_release(self):
     return self.release or ""

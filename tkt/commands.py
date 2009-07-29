@@ -25,6 +25,7 @@ DEFAULT = "todo"
 
 def main():
     import tkt.getplugins
+    tkt.getplugins.getplugins()
     if len(sys.argv) > 1 and sys.argv[1] and not sys.argv[1].startswith('-'):
         arg = sys.argv[1]
     else:
@@ -117,8 +118,9 @@ class Command(object):
         return self._options_args[1]
 
     def gather_creator(self):
-        return "%s <%s>" % (tkt.config.config.username,
-                            tkt.config.config.useremail)
+        user = tkt.config.user()
+        return "%s <%s>" % (user.username,
+                            user.useremail)
 
     def gather_ticket(self, try_prompting=True, prompt="Ticket:"):
         if not (self.parsed_args and self.parsed_args[0]):
@@ -200,30 +202,7 @@ class Command(object):
 
     @property
     def project(self):
-        if not hasattr(tkt.config.config, "project"):
-            tkt.config.config.project = self.load_project()
-        return tkt.config.config.project
-
-    @classmethod
-    def load_project(cls):
-        # also loads everything else:
-        #   all issues (from Project.__init__),
-        #   and all Events (from Issue.__init__)
-        filename = tkt.files.project_filename()
-
-        try:
-            fp = open(filename)
-        except IOError:
-            dirname = os.path.dirname(filename)
-            if not os.path.exists(dirname):
-                os.path.makedirs(dirname)
-            os.mknod(filename, 0644, stat.S_IFREG)
-            return tkt.models.Project({'issues': []})
-
-        try:
-            return tkt.models.Project.load(fp)
-        finally:
-            fp.close()
+        return tkt.config.project()
 
     def store_new_issue(self, **data):
         dt = datetime.datetime.now()
@@ -278,22 +257,6 @@ class Command(object):
             issue.dump(fp)
         finally:
             fp.close()
-
-    def store_new_configuration(self, username, useremail, datafolder):
-        config = tkt.models.Configuration({
-            'username': username,
-            'useremail': useremail,
-            'datafolder': datafolder,
-        })
-
-        rcpath = self.configobj.rcfile()
-        fp = open(rcpath, 'w')
-        try:
-            config.dump(fp)
-        finally:
-            fp.close()
-
-        return config
 
     def _build_parser(self):
         parser = optparse.OptionParser()
@@ -435,30 +398,6 @@ aliases('man', 'info')(Help)
 class Init(Command):
     options = [
         {
-            'short': '-u',
-            'long': '--username',
-            'help': 'your name',
-            'type': 'string',
-        },
-        {
-            'short': '-e',
-            'long': '--useremail',
-            'help': 'your email address',
-            'type': 'string',
-        },
-        {
-            'short': '-f',
-            'long': '--foldername',
-            'help': 'name for the tkt data folder',
-            'type': 'string',
-        },
-        {
-            'short': '-p',
-            'long': '--projectname',
-            'help': 'name of the tracked project',
-            'type': 'string',
-        },
-        {
             'short': '-i',
             'long': '--plugins',
             'help': 'a comma-separated list of python-paths to plugins',
@@ -468,60 +407,29 @@ class Init(Command):
 
     usageinfo = "set up a new tkt repository"
 
-    def main(self):
-        self.configobj = tkt.models.Configuration(None)
-        Command.main(self)
-
-    def ttymain(self):
-        default_username = self.configobj.get('username')
-        username = self.parsed_options.username or \
-                self.prompt("Your Name [%s]:" % default_username) or \
-                default_username
-
-        default_email = self.configobj.get('useremail')
-        useremail = self.parsed_options.useremail or \
-                self.prompt("Your E-Mail [%s]:" % default_email) or \
-                default_email
-
-        default_folder = self.configobj.get('datafolder')
-        datafolder = self.parsed_options.foldername or \
-                self.prompt("tkt Data Folder [%s]:" % default_folder) or \
-                default_folder
-
-        default_project = os.path.basename(os.path.abspath('.'))
-        projectname = self.parsed_options.projectname or\
-                self.prompt("Project Name [%s]:" % default_project) or\
-                default_project
-
+    def gather_plugins(self):
         if self.parsed_options.plugins:
-            plugins = self.parsed_options.plugins.split(',')
-        else:
-            plugins = []
-            while 1:
-                plugin = self.prompt("Plugin Python-Path [Enter to end]:")
-                if not plugin:
-                    break
-                plugins.append(plugin)
+            return [p.strip() for p in self.parsed_options.plugins.split(",")]
 
-        if not self.configobj._filepresent:
-            self.store_new_configuration(username, useremail, datafolder)
+        plugins = []
+        while 1:
+            plugin = self.prompt("Add a plugin [Enter when finished]:")
+            if not plugin:
+                break
+            plugins.append(plugin)
 
-        self.project.name = projectname
-        self.project.plugins = plugins
+        return plugins
 
-        fp = open(tkt.files.project_filename(), 'w')
-        try:
-            self.project.dump(fp)
-        finally:
-            fp.close()
+    def main(self):
+        projpath, projpathexists = tkt.models.ProjectConfig.findpath()
+        datafolder = os.path.dirname(projpath)
 
-    def pipemain(self):
-        self.require_all_options()
+        if not projpathexists:
+            if not os.path.isdir(datafolder):
+                os.makedirs(datafolder)
+            os.mknod(name, 0644, stat.S_IFREG)
 
-        self.store_new_configuration(
-            self.parsed_options.username,
-            self.parsed_options.useremail,
-            self.parsed_options.foldername)
+        project = tkt.models.ProjectConfig({'plugins': self.gather_plugins()})
 
 aliases('setup')(Init)
 
@@ -678,16 +586,7 @@ class Drop(Command):
 
     def main(self):
         issue = self.gather_ticket()
-
         shutil.rmtree(os.path.dirname(tkt.files.issue_filename(issue.id)))
-
-        self.project.issues.remove(issue)
-
-        fp = open(tkt.files.project_filename(), 'w')
-        try:
-            self.project.dump(fp)
-        finally:
-            fp.close()
 
 aliases('delete')(Drop)
 
@@ -882,12 +781,14 @@ class Grep(Command):
         if not (self.parsed_args and self.parsed_args[0]):
             self.fail("a regular expression argument required")
 
-        dirname = os.path.dirname(tkt.files.project_filename())
+        dirname = tkt.config.datapath()
         args = ["grep", "-E", self.parsed_args[0]]
         args.extend(glob.glob("%s%s*%s*.yaml" % (dirname, os.sep, os.sep)))
 
         proc = subprocess.Popen(args, stdout=subprocess.PIPE)
         output = proc.communicate()[0]
+
+        print output
 
         regex = re.compile("([0-9a-f]{32})/((issue)|([0-9a-f]{32}))\.yaml:")
         matches = map(regex.search, output.splitlines())
@@ -1122,7 +1023,7 @@ class Upgrade(Command):
         return upgrader
 
     def point_three_upgrade(self):
-        oldfolders = glob.glob("%s%s*" % (tkt.config.config.datapath, os.sep))
+        oldfolders = glob.glob("%s%s*" % (tkt.config.datapath(), os.sep))
         oldfolders = filter(os.path.isdir, oldfolders)
 
         oldidregex = re.compile("^[0-9a-f]{32}$")

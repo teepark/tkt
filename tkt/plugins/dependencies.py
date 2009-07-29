@@ -83,7 +83,7 @@ def lessthan(self, other):
 
     return oldlt(self, other)
 
-tkt.models.Project._oldissues = tkt.models.Project.issues
+tkt.models.ProjectConfig._oldissues = tkt.models.ProjectConfig.issues
 def listissues(self):
     issuelist = self._oldissues
     if not hasattr(self, "_issues_dependency_sorted"):
@@ -96,7 +96,7 @@ def listissues(self):
         issuelist.sort()
 
     return issuelist
-tkt.models.Project.issues = property(listissues)
+tkt.models.ProjectConfig.issues = property(listissues)
 
 class Depend(tkt.commands.Command):
     usage = "<ticket> [<dependency>]"

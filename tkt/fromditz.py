@@ -7,7 +7,7 @@ import operator
 import os
 import uuid
 
-from tkt.config import config
+import tkt.config
 import tkt.files
 import tkt.models
 import tkt.timezones
@@ -166,12 +166,13 @@ def main():
             'comment': ev[3],
         }) for ev in di.log_events]
 
+        user = tkt.config.user()
         events[issue.id].append(tkt.models.Event({
             'id': "%s-%s" % (tkt.commands.hextimestamp(utcnow)[:8],
                              uuid.uuid4().hex[:8]),
             'title': 'ticket imported from ditz',
             'created': now,
-            'creator': "%s <%s>" % (config.username, config.useremail),
+            'creator': "%s <%s>" % (user.username, user.useremail),
             'comment': "",
         }))
 

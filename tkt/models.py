@@ -1,12 +1,10 @@
 import functools
 import glob
 import itertools
-import operator
 import os
-import stat
-import subprocess
+import platform
 
-import tkt.files
+import tkt.config
 import tkt.flextime
 import tkt.timezones
 import tkt.utils
@@ -70,73 +68,38 @@ class Model(object):
     def view_detail(self):
         return "not implemented"
 
-class Configuration(Model):
-    fields = ['username', 'useremail', 'datafolder']
+class UserConfig(Model):
+    fields = ['username', 'useremail', 'plugins']
 
     RCFILENAME = '.tktrc.yaml'
-    DEFAULT_DATAFOLDER = '.tkt'
 
     def __init__(self, data):
         Model.__init__(self, data)
-        self._filepresent = any(self.__dict__.values())
-        for fieldname in self.fields:
-            if not getattr(self, fieldname):
-                setattr(self, fieldname,
-                        getattr(self, "default_%s" % fieldname)())
 
-    def get(self, name):
-        attr = getattr(self, name, None)
-        if attr is None:
-            return getattr(self, "default_%s" % name)()
-        return attr
+        self.plugins = self.plugins or []
+        self.username = self.username or self.default_username()
+        self.useremail = self.useremail or self.default_useremail()
 
     @classmethod
-    def _find(cls, name, searchhome=False):
-        path = os.path.abspath(os.curdir)
-        parentpath = os.path.abspath(os.path.join(path, os.pardir))
+    def findpath(cls):
+        if 'HOME' in os.environ:
+            path = os.path.join(os.environ['HOME'], cls.RCFILENAME)
+            return path, os.path.isfile(path)
 
-        rcpath = os.path.join(path, name)
-        if os.path.exists(rcpath):
-            return rcpath
+        here = os.path.abspath('.')
+        path = os.path.join(here, cls.RCFILENAME)
+        parent = os.path.dirname(here)
 
-        # the theory is that once we reach the root, the parent folder's path
-        # is the same as the current folder's path
-        while path != parentpath:
-            path = parentpath
-            parentpath = os.path.abspath(os.path.join(path, os.pardir))
+        if os.path.isfile(path):
+            return path, True
 
-            rcpath = os.path.join(path, name)
-            if os.path.exists(rcpath):
-                return rcpath
+        while here != parent:
+            here = parent
+            parent = os.path.dirname(here)
+            if os.path.isfile(path):
+                return path, True
 
-        if searchhome:
-            homedir = os.environ.get('HOME')
-            if not homedir:
-                return None
-
-            rcpath = os.path.abspath(os.path.join(homedir, name))
-            if os.path.exists(rcpath):
-                return rcpath
-        return None
-
-    @classmethod
-    def rcfile(cls):
-        rcfile = cls._find(cls.RCFILENAME, searchhome=True)
-        if not rcfile:
-            rcfile = os.path.abspath(os.path.join('.', cls.RCFILENAME))
-            os.mknod(rcfile, 0644, stat.S_IFREG)
-        return rcfile
-
-    @property
-    def datapath(self):
-        if not hasattr(self, "_datapath"):
-            folder = self._find(self.datafolder)
-            if not folder:
-                folder = os.path.abspath(os.path.join('.',
-                        self.DEFAULT_DATAFOLDER))
-                os.mkdir(folder)
-            self._datapath = folder
-        return self._datapath
+        return os.path.join(os.path.abspath('.'), cls.RCFILENAME), False
 
     def default_username(self):
         return (os.environ.get('USER') or 'anonymous user').title()
@@ -144,15 +107,81 @@ class Configuration(Model):
     def default_useremail(self):
         if not hasattr(self, 'username'):
             self.username = self.default_username()
-        try:
-            proc = subprocess.Popen("hostname", stdout=subprocess.PIPE)
-            hostname = proc.communicate()[0].rstrip()
-        except:
-            hostname = "localhost.localdomain"
+        hostname = platform.uname()[1]
         return "%s@%s" % (self.username.lower().replace(" ", "."), hostname)
 
-    def default_datafolder(self):
-        return self.DEFAULT_DATAFOLDER
+class ProjectConfig(Model):
+    fields = ['plugins']
+
+    RCFILENAME = 'project.yaml'
+
+    def __init__(self, data):
+        Model.__init__(self, data)
+        self.plugins = self.plugins or []
+
+    @classmethod
+    def findpath(cls):
+        subpath = os.path.join(tkt.config.DATAFOLDERNAME, cls.RCFILENAME)
+
+        here = os.path.abspath('.')
+        path = os.path.join(here, subpath)
+        parent = os.path.dirname(here)
+
+        if os.path.isfile(path):
+            return path, True
+
+        while 1:
+            here = parent
+            path = os.path.join(here, subpath)
+            parent = os.path.dirname(here)
+
+            if os.path.isfile(path):
+                return path, True
+
+        return os.path.join(os.path.abspath('.'), tkt.config.DATAFOLDERNAME,
+                            cls.RCFILENAME), False
+
+    def _load_issue(self, number, filename):
+        issue = Issue.loadfile(filename)
+        issue.project = self
+        issue.name = "#%d" % number
+        issue.__class__.longestname = max(len(issue.name),
+                                          issue.__class__.longestname)
+        return issue
+
+    @property
+    def issue_filenames(self):
+        if not hasattr(self, "_issue_filenames"):
+            self._issue_filenames = names = glob.glob("%s%s*%sissue.yaml" % (
+                    tkt.config.datapath(), os.sep, os.sep))
+            names.sort()
+        return self._issue_filenames
+
+    @property
+    def issues(self):
+        if not hasattr(self, "issuedata"):
+            issuefiles = self.issue_filenames
+            self.issuedata = tkt.utils.LazyLoadingList(itertools.starmap(
+                self._load_issue, enumerate(issuefiles)))
+        return self.issuedata
+
+class OverallConfig(object):
+    def __init__(self, user, project):
+        self.user = user
+        self.project = project
+
+    @property
+    def username(self):
+        return self.user.username
+
+    @property
+    def useremail(self):
+        return self.user.useremail
+
+    @property
+    def plugins(self):
+        allplugs = self.user.plugins + self.project.plugins
+        return sorted(set(allplugs), key=allplugs.index)
 
 class Event(Model):
     fields = [
@@ -255,7 +284,7 @@ class Issue(Model):
     def events(self):
         if not hasattr(self, "eventdata"):
             eventfiles = glob.glob("%s%s%s%s*.yaml" % (
-                tkt.config.config.datapath, os.sep, self.id, os.sep))
+                tkt.config.datapath(), os.sep, self.id, os.sep))
             eventfiles = [f for f in eventfiles
                           if os.path.basename(f) != "issue.yaml"]
             eventfiles.sort()
@@ -339,35 +368,3 @@ Event Log:
 
     def event_log(self):
         return "\n".join(e.view_detail() for e in self.events)
-
-class Project(Model):
-    fields = ["name", "plugins"]
-
-    def __init__(self, data):
-        Model.__init__(self, data)
-
-        self.plugins = self.plugins or []
-
-    def _load_issue(self, number, filename):
-        issue = Issue.loadfile(filename)
-        issue.project = self
-        issue.name = "#%d" % number
-        issue.__class__.longestname = max(len(issue.name),
-                                          issue.__class__.longestname)
-        return issue
-
-    @property
-    def issue_filenames(self):
-        if not hasattr(self, "_issue_filenames"):
-            self._issue_filenames = names = glob.glob("%s%s*%sissue.yaml" % (
-                    tkt.config.config.datapath, os.sep, os.sep))
-            names.sort()
-        return self._issue_filenames
-
-    @property
-    def issues(self):
-        if not hasattr(self, "issuedata"):
-            issuefiles = self.issue_filenames
-            self.issuedata = tkt.utils.LazyLoadingList(itertools.starmap(
-                self._load_issue, enumerate(issuefiles)))
-        return self.issuedata

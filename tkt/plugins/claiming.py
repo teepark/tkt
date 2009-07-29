@@ -40,7 +40,7 @@ class Claim(tkt.commands.Command):
 
     def main(self):
         issue = self.gather_ticket()
-        issue.owner = tkt.config.config.useremail
+        issue.owner = tkt.config.user().useremail
 
         self.store_issue(issue)
         self.store_new_event(issue,

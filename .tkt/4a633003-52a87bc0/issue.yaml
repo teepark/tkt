@@ -22,7 +22,7 @@ id: 4a633003-52a87bc0
 labels: null
 owner: null
 release: '0.3'
-resolution: null
-status: unstarted
+resolution: fixed
+status: closed
 title: config locations
 type: task
