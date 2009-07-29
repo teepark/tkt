@@ -1023,6 +1023,8 @@ class Upgrade(Command):
         return upgrader
 
     def point_three_upgrade(self):
+        self.issue_id_map = issue_id_map = {}
+
         oldfolders = glob.glob("%s%s*" % (tkt.config.datapath(), os.sep))
         oldfolders = filter(os.path.isdir, oldfolders)
 
@@ -1044,6 +1046,7 @@ class Upgrade(Command):
 
             newid = "%s-%s" % (hextimestamp(issuedata['created']), oldid[:8])
             issuedata['id'] = newid
+            issue_id_map[oldid] = newid
 
             newfolder = os.path.join(os.path.dirname(oldfolder), newid)
             newpath = os.path.join(newfolder, "issue.yaml")

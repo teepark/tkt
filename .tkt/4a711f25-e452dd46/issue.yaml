@@ -7,7 +7,7 @@ id: 4a711f25-e452dd46
 labels: null
 owner: null
 release: '0.3'
-resolution: null
-status: unstarted
+resolution: fixed
+status: closed
 title: dependencies get disconnected when running 'tkt upgrade 0.3'
 type: bugfix

@@ -229,3 +229,12 @@ def dropmain(self):
     olddropmain(self)
 
 tkt.commands.Drop.main = dropmain
+
+oldpointthreeupgrade = tkt.commands.Upgrade.poing_three_upgrade
+def point_three_upgrade(self):
+    oldpointthreeupgrade(self)
+    for issue in self.project.issues:
+        if issue.dependencies:
+            issue.dependencies = map(self.issue_id_map.get, issue.dependencies)
+        self.store_issue(issue)
+tkt.commands.Upgrade.upgrades['0.3'] = point_three_upgrade
