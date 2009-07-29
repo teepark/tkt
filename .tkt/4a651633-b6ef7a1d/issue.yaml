@@ -1,0 +1,22 @@
+created: 2009-07-20 18:13:23.465873
+creator: Travis Parker <travis.parker@gmail.com>
+description: 'currently, any time you load a project, it automatically loads every
+  ticket, and
+
+  every time you load a ticket, it automatically loads every event.
+
+
+  this is way too slow, especially since there are commands that need the project
+
+  but don''t even need the tickets
+
+
+  project.issues should be a @property that loads the tickets once for a project,
+
+  and same for issue.events'
+id: 4a651633-b6ef7a1d
+release: '0.3'
+resolution: fixed
+status: closed
+title: load tickets and events on-demand
+type: task

@@ -1,0 +1,16 @@
+created: 2009-07-15 23:22:45.032773
+creator: Travis Parker <travis.parker@gmail.com>
+description: '1. label
+
+  2. labeled
+
+  3. add-label
+
+  4. unlabel'
+id: 4a5ec735-584edc77
+labels: null
+release: '0.2'
+resolution: fixed
+status: closed
+title: label plugin
+type: feature

@@ -1,7 +1,0 @@
-comment: 'tkt.commands.Command now uses tkt.plugins.MetaPluggable as its metaclass,
-
-  but MetaPluggable isn''t written yet (and is part of a ticket #6)'
-created: 2009-07-10 23:44:12.441157
-creator: Travis Parker <travis.parker@gmail.com>
-id: 7dfb25892a20474e9d6c5c7e275b9ad0
-title: commented

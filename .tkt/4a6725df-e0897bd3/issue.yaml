@@ -1,0 +1,14 @@
+created: 2009-07-22 07:44:47.753280
+creator: Travis Parker <travis.parker@gmail.com>
+dependencies: null
+description: 'instead, glob.glob(''datadir/issueid/*.yaml'') and filter out ''issue.yaml''
+
+  '
+id: 4a6725df-e0897bd3
+labels: null
+owner: null
+release: '0.3'
+resolution: fixed
+status: closed
+title: don't store events in issue.py
+type: task

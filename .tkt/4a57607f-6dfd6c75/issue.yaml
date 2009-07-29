@@ -1,0 +1,14 @@
+component: tkt
+created: 2009-07-10 08:38:39.042680
+creator: Travis Parker <travis.parker@gmail.com>
+description: "start with feature parity with base ditz:\n\n - components\n - releases\n\
+  \nthen move on to matching existing ditz plugins (that i like)\n\n - labels\n -\
+  \ claiming\n\ni also like git integration but it's pretty brittle in ditz\nright\
+  \ now, not the model to follow\n\nthen, features in addition to what is found in\
+  \ ditz (even plugins):\n\n - dependencies"
+id: 4a57607f-6dfd6c75
+release: '0.2'
+resolution: reorg
+status: closed
+title: starting plugins
+type: feature

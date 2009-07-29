@@ -1,0 +1,40 @@
+component: tkt
+created: 2009-07-10 08:43:48.181099
+creator: Travis Parker <travis.parker@gmail.com>
+description: 'command list without any plugins:
+
+  - add, alias new
+
+  - close, alias finish, end
+
+  - comment, alias annotate
+
+  - drop, alias delete
+
+  - edit
+
+  - grep, alias search
+
+  - help, alias man, info
+
+  - html
+
+  - init
+
+  - show, alias view
+
+  - start, alias work
+
+  - status
+
+  - stop, alias pause
+
+  - todo
+
+  - (put more in comments)'
+id: 4a5761b4-92d4c91e
+release: '0.1'
+resolution: fixed
+status: closed
+title: default command list
+type: feature
