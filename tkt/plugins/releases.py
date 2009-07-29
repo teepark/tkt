@@ -268,7 +268,7 @@ class ChangeLog(tkt.commands.Command):
 
         for issue in self.project.issues:
             if issue.release == name:
-                print "* %s" % issue.title
+                print "* (%s) %s" % (issue.type, issue.title)
                 empty = False
 
         if empty:
