@@ -35,7 +35,8 @@ def filter_dependency(self, issue):
 tkt.commands.Search.filter_dependency = filter_dependency
 
 def validate_dependencies(self, deps):
-    depset = set(deps or [])
+    deps = deps or []
+    depset = set(deps)
     if len(deps) > len(depset):
         return False
     if set(i.id for i in self.project.issues) < depset:
