@@ -805,18 +805,15 @@ class Edit(Command):
             if key == "status":
                 if not self.validate_status_resolution(value,
                         data.get('resolution')):
-                    print "status/resolution fail"
                     self.fail('edited ticket is invalid')
 
             if key == "resolution":
                 continue
 
             if not hasattr(self, "validate_%s" % key):
-                print "no validator for %s" % key
                 self.fail("edited ticket is invalid")
 
             if not getattr(self, "validate_%s" % key)(value):
-                print "validation failed for %s" % key
                 self.fail("edited ticket is invalid")
 
         issue.__dict__.update(data)
