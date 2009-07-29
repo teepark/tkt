@@ -1124,7 +1124,7 @@ class Upgrade(Command):
             self.fail("upgrades are %s" % ", ".join(self.upgrades.keys()))
         return upgrader
 
-    def point_five_upgrade(self):
+    def point_three_upgrade(self):
         oldfolders = glob.glob("%s%s*" % (tkt.config.config.datapath, os.sep))
         oldfolders = filter(os.path.isdir, oldfolders)
 
@@ -1185,7 +1185,7 @@ class Upgrade(Command):
                 os.unlink(oldeventfile)
 
     upgrades = {
-        '0.5': point_five_upgrade,
+        '0.3': point_three_upgrade,
     }
 
     def main(self):

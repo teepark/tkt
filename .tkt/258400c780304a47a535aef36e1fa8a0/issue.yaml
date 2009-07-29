@@ -9,7 +9,7 @@ description: 'for example, ''tkt close 11'' doesn''t have to load and parse 11 y
 id: 258400c780304a47a535aef36e1fa8a0
 labels: null
 owner: null
-release: '0.5'
+release: '0.3'
 resolution: fixed
 status: closed
 title: optimizations based on new filename convention
