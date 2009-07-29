@@ -230,7 +230,7 @@ def dropmain(self):
 
 tkt.commands.Drop.main = dropmain
 
-oldpointthreeupgrade = tkt.commands.Upgrade.poing_three_upgrade
+oldpointthreeupgrade = tkt.commands.Upgrade.point_three_upgrade
 def point_three_upgrade(self):
     oldpointthreeupgrade(self)
     for issue in self.project.issues:
