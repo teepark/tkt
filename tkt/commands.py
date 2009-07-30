@@ -17,14 +17,29 @@ import uuid
 import tkt.files
 import tkt.models
 import tkt.config
+import tkt.getplugins
 import yaml
 
 
 CLOSED = tkt.models.Issue.CLOSED
 DEFAULT = "todo"
 
+loader_class = yaml.__with_libyaml__ and yaml.CLoader or yaml.Loader
+dumper_class = yaml.__with_libyaml__ and yaml.CDumper or yaml.Dumper
+
+_load = yaml.load
+def load_yaml(*args, **kwargs):
+    kwargs.pop('Loader', 0)
+    return _load(*args, Loader=loader_class, **kwargs)
+yaml.load = load_yaml
+
+_dump = yaml.dump
+def dump_yaml(*args, **kwargs):
+    kwargs.pop('Dumper', 0)
+    return _dump(*args, Dumper=dumper_class, **kwargs)
+yaml.dump = dump_yaml
+
 def main():
-    import tkt.getplugins
     tkt.getplugins.getplugins()
     if len(sys.argv) > 1 and sys.argv[1] and not sys.argv[1].startswith('-'):
         arg = sys.argv[1]
