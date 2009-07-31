@@ -849,7 +849,8 @@ class Grep(Command):
 
         dirname = tkt.config.datapath()
         args = ["grep", "-E", self.parsed_args[0]]
-        args.extend(glob.glob("%s%s*%s*.yaml" % (dirname, os.sep, os.sep)))
+        args.extend(glob.glob("%s%stickets%s*%s*.yaml" %
+                (dirname, os.sep, os.sep, os.sep)))
 
         proc = subprocess.Popen(args, stdout=subprocess.PIPE)
         output = proc.communicate()[0]

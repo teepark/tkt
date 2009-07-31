@@ -200,6 +200,9 @@ def qamain(self):
     issue = self.gather_ticket()
     self.gather_ticket = lambda: issue
 
+    if not hasattr(issue, 'deps'):
+        issue.deps = get_dependencies(issue)
+
     opendeps = [d for d in issue.deps if d.status != tkt.models.Issue.CLOSED]
     opendeps = [d for d in opendeps if d.id in (issue.dependencies or [])]
     if opendeps:

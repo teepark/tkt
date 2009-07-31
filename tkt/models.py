@@ -152,8 +152,9 @@ class ProjectConfig(Model):
     @property
     def issue_filenames(self):
         if not hasattr(self, "_issue_filenames"):
-            self._issue_filenames = names = glob.glob("%s%s*%sissue.yaml" % (
-                    tkt.config.datapath(), os.sep, os.sep))
+            self._issue_filenames = names = glob.glob(
+                    "%s%stickets%s*%sticket.yaml" % (
+                    tkt.config.datapath(), os.sep, os.sep, os.sep))
             names.sort()
         return self._issue_filenames
 
@@ -283,10 +284,10 @@ class Issue(Model):
     @property
     def events(self):
         if not hasattr(self, "eventdata"):
-            eventfiles = glob.glob("%s%s%s%s*.yaml" % (
-                tkt.config.datapath(), os.sep, self.id, os.sep))
+            eventfiles = glob.glob("%s%stickets%s%s%s*.yaml" % (
+                tkt.config.datapath(), os.sep, os.sep, self.id, os.sep))
             eventfiles = [f for f in eventfiles
-                          if os.path.basename(f) != "issue.yaml"]
+                          if os.path.basename(f) != "ticket.yaml"]
             eventfiles.sort()
             self.eventdata = tkt.utils.LazyLoadingList(
                     itertools.imap(self._load_event, eventfiles))
