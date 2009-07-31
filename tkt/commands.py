@@ -738,16 +738,16 @@ class Edit(Command):
 
         data = dict(zip(issue.fields, map(functools.partial(getattr, issue),
                                           issue.fields)))
-        data = {}
+        dumpdata = {}
         for field in issue.fields:
             if field in self.uneditable_fields:
                 continue
-            data[field] = getattr(issue, field)
+            dumpdata[field] = getattr(issue, field)
 
         temp = tempfile.mktemp()
         fp = open(temp, 'w')
         try:
-            yaml.dump(data, stream=fp, default_flow_style=False)
+            yaml.dump(dumpdata, stream=fp, default_flow_style=False)
         finally:
             fp.close()
 
@@ -756,17 +756,20 @@ class Edit(Command):
 
         fp = open(temp)
         try:
-            data = yaml.load(fp)
+            loaddata = yaml.load(fp)
         except:
             self.fail("that was invalid yaml")
         finally:
             fp.close()
 
+        if dumpdata == loaddata:
+            self.fail("no changes")
+
         # heavy validation so we don't wind up in an inconsistent state
-        for key, value in data.iteritems():
+        for key, value in loaddata.iteritems():
             if key == "status":
                 if not self.validate_status_resolution(value,
-                        data.get('resolution')):
+                        loaddata.get('resolution')):
                     self.fail('edited ticket is invalid')
 
             if key == "resolution":
@@ -778,7 +781,7 @@ class Edit(Command):
             if not getattr(self, "validate_%s" % key)(value):
                 self.fail("edited ticket is invalid")
 
-        issue.__dict__.update(data)
+        issue.__dict__.update(loaddata)
 
         self.store_issue(issue)
         self.store_new_event(
