@@ -17,7 +17,7 @@ id: 4a739e20-2e4ea88e
 labels: null
 owner: null
 release: null
-resolution: null
-status: unstarted
+resolution: fixed
+status: closed
 title: sorting by dependencies isn't happening in 'todo'
 type: bugfix
