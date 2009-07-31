@@ -7,7 +7,6 @@ import optparse
 import os
 import re
 import shutil
-import stat
 import subprocess
 import sys
 import tempfile
@@ -442,12 +441,15 @@ class Init(Command):
         projpath, projpathexists = tkt.models.ProjectConfig.findpath()
         datafolder = os.path.dirname(projpath)
 
-        if not projpathexists:
-            if not os.path.isdir(datafolder):
-                os.makedirs(datafolder)
-            os.mknod(name, 0644, stat.S_IFREG)
+        if not os.path.isdir(datafolder):
+            os.makedirs(datafolder)
 
         project = tkt.models.ProjectConfig({'plugins': self.gather_plugins()})
+
+        fp = open(projpath, 'w')
+        try:
+            project.dump(fp)
+        finally:fp.close()
 
 aliases('setup')(Init)
 

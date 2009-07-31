@@ -130,7 +130,7 @@ class ProjectConfig(Model):
         if os.path.isfile(path):
             return path, True
 
-        while 1:
+        while here != parent:
             here = parent
             path = os.path.join(here, subpath)
             parent = os.path.dirname(here)
