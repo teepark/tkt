@@ -23,7 +23,7 @@ def re(num):
     realstdin = sys.stdin
     sys.stdin = StringIO.StringIO(commit_msg)
     cmd.pipemain()
-    sys.stdin = readstdin
+    sys.stdin = realstdin
 
 def close(num):
     print "closing tkt #%s" % num
