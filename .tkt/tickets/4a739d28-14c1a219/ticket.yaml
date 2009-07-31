@@ -12,7 +12,7 @@ description: "a Milestone model corresponds to id-named files in the milestones 
 id: 4a739d28-14c1a219
 labels: null
 owner: null
-release: null
+release: '0.4'
 resolution: null
 status: unstarted
 title: milestones plugin to supercede releases

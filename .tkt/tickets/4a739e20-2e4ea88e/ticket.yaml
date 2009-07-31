@@ -16,7 +16,7 @@ description: '22 depends on 23, yet:
 id: 4a739e20-2e4ea88e
 labels: null
 owner: null
-release: null
+release: '0.4'
 resolution: fixed
 status: closed
 title: sorting by dependencies isn't happening in 'todo'
