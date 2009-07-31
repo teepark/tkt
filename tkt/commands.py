@@ -504,27 +504,32 @@ class Close(Command):
         self.options[0]['help'] = self.options[0]['help'] % \
                 tkt.models.Issue.resolutions_text(', ')
 
-    def gather_resolution(self):
+    def gather_resolution(self, try_prompting=True):
         resolutions = dict(tkt.models.Issue.resolutions)
 
         provided = self.parsed_options.resolution
         if provided and provided.isdigit() and int(provided) in resolutions:
             return resolutions[int(provided)]
 
-        if provided and provided in resolutions.values():
+        if provided:
+            if provided not in resolutions.itervalues():
+                self.fail("%s is not a known resolution" % provided)
             return provided
 
-        while 1:
-            resolution = self.prompt("%s\nResolution:" %
-                    tkt.models.Issue.resolutions_text())
+        if try_prompting:
+            while 1:
+                resolution = self.prompt("%s\nResolution:" %
+                        tkt.models.Issue.resolutions_text())
 
-            if resolution.isdigit() and int(resolution) in resolutions:
-                return resolutions[int(resolution)]
+                if resolution.isdigit() and int(resolution) in resolutions:
+                    return resolutions[int(resolution)]
 
-            if resolution in resolutions.values():
-                return resolution
+                if resolution in resolutions.values():
+                    return resolution
 
-    def main(self):
+        self.fail("a resolution is required")
+
+    def ttymain(self):
         data = self.gather()
         issue = data['ticket']
         issue.resolution = data['resolution']
@@ -537,6 +542,19 @@ class Close(Command):
             datetime.datetime.now(),
             self.gather_creator(),
             self.editor_prompt("Comment"))
+
+    def pipemain(self):
+        issue = self.gather_ticket(try_prompting=False)
+        issue.resolution = self.gather_resolution(try_prompting=False)
+        issue.status = CLOSED
+
+        self.store_issue(issue)
+        self.store_new_event(
+            issue,
+            "ticket closed",
+            datetime.datetime.now(),
+            self.gather_creator(),
+            "")
 
 aliases('finish', 'end')(Close)
 
@@ -567,7 +585,7 @@ class QA(Command):
 
     usageinfo = "mark a ticket as ready for QA"
 
-    def main(self):
+    def ttymain(self):
         issue = self.gather_ticket()
 
         issue.status = "resolution in QA"
@@ -581,19 +599,44 @@ class QA(Command):
             self.gather_creator(),
             self.editor_prompt("Comment"))
 
+    def pipemain(self):
+        issue = self.gather_ticket(try_prompt=False)
+
+        issue.status = "resolution in QA"
+        issue.resolution = None
+
+        self.store_issue(issue)
+        self.store_new_event(
+            issue,
+            "ticket sent to QA",
+            datetime.datetime.now(),
+            self.gather_creator(),
+            "")
+
 class Comment(Command):
     usage = '[<ticket>]'
 
     usageinfo = "add a comment to a ticket"
 
-    def main(self):
-
+    def ttymain(self):
         self.store_new_event(
             self.gather_ticket(),
             "comment added",
             datetime.datetime.now(),
             self.gather_creator(),
             self.editor_prompt("Comment"))
+
+    def pipemain(self):
+        msg = sys.stdin.read()
+        if not msg:
+            self.fail("a comment is required")
+
+        self.store_new_event(
+            self.gather_ticket(try_prompting=False),
+            "comment added",
+            datetime.datetime.now(),
+            self.gather_creator(),
+            msg)
 
 aliases('annotate')(Comment)
 

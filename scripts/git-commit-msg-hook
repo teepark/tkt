@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+
+import re
+import sys
+
+import tkt.commands
+
+
+msg_regex = re.compile("((?:qa)|(?:re)|(?:close)): ?#?(\d+)")
+
+commit_msg = open(sys.argv[1]).read()
+
+def qa(num):
+    print "marking tkt #%s for QA" % num
+    cmd = tkt.commands.QA()
+    cmd.argv = [num]
+    cmd.pipemain()
+
+def re(num):
+    print "making a note in tkt #%s" % num
+    cmd = tkt.commands.Comment()
+    cmd.argv = [num]
+    realstdin = sys.stdin
+    sys.stdin = StringIO.StringIO(commit_msg)
+    cmd.pipemain()
+    sys.stdin = readstdin
+
+def close(num):
+    print "closing tkt #%s" % num
+    cmd = tkt.commands.Close()
+    cmd.argv = [num, '-r', 'fixed']
+    cmd.pipemain()
+
+for line in commit_msg.splitlines():
+    for action, num in msg_regex.findall(line):
+        locals()[action](num)
