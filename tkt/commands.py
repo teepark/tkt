@@ -54,7 +54,10 @@ def main():
 
     cmd.prepare_options()
 
-    cmd.main()
+    try:
+        cmd.main()
+    except KeyboardInterrupt:
+        cmd.fail("Cancelled")
 
 def track_opens():
     builtinopen = __builtins__.open
