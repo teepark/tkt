@@ -4,12 +4,15 @@ dependencies: null
 description: 'project.yaml stays put
 
 
-  issue folders go inside a ''tickets'' directory'
+  issue folders go inside a ''tickets'' directory
+
+
+  also, ''issue.yaml'' should become ''ticket.yaml'''
 id: 4a739d69-b828909f
 labels: null
 owner: null
 release: null
-resolution: null
-status: unstarted
+resolution: fixed
+status: closed
 title: subfolders of .tkt/
 type: task
