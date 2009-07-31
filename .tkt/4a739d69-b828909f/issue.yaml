@@ -11,7 +11,7 @@ description: 'project.yaml stays put
 id: 4a739d69-b828909f
 labels: null
 owner: null
-release: null
+release: '0.4'
 resolution: fixed
 status: closed
 title: subfolders of .tkt/
