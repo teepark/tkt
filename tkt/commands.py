@@ -1163,12 +1163,12 @@ class Upgrade(Command):
 
         for oldfold in folders:
             newfold = os.path.join(ticketsfolder, os.path.basename(oldfold))
-            shutil.copytree(oldfold, newfold)
+            shutil.mv(oldfold, newfold)
 
         issuefiles = glob.glob(os.path.join(ticketsfolder, "*", "issue.yaml"))
         for oldfile in issuefiles:
             newfile = os.path.join(os.path.dirname(oldfile), "ticket.yaml")
-            shutil.copyfile(oldfile, newfile)
+            shutil.mv(oldfile, newfile)
 
     upgrades = {
         '0.3': point_three_upgrade,
