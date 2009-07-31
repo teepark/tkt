@@ -1,0 +1,19 @@
+created: 2009-07-31 18:40:56.365063
+creator: Travis Parker <travis.parker@gmail.com>
+dependencies:
+- 4a739d69-b828909f
+description: "a Milestone model corresponds to id-named files in the milestones directory\n\ntickets
+  will have an optional 'milestone' field, which will be the id of the milestone\n\nMilestone
+  fields:\n- id string\n- created datetime\n- type enum('feature', 'release')\n- released
+  (optional) datetime\n- scheduled (optional) datetime\n- description string\n\ntodo
+  can take a milestone name as a positional argument (also combines with -a)\ntodo
+  without the milestone argument groups tickets by milestone\n - sorts milestones
+  by created\n - sorts tickets within milestones as usual (with dependency override)\n"
+id: 4a739d28-14c1a219
+labels: null
+owner: null
+release: null
+resolution: null
+status: unstarted
+title: milestones plugin to supercede releases
+type: feature

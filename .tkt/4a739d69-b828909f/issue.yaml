@@ -1,0 +1,15 @@
+created: 2009-07-31 18:42:01.248135
+creator: Travis Parker <travis.parker@gmail.com>
+dependencies: null
+description: 'project.yaml stays put
+
+
+  issue folders go inside a ''tickets'' directory'
+id: 4a739d69-b828909f
+labels: null
+owner: null
+release: null
+resolution: null
+status: unstarted
+title: subfolders of .tkt/
+type: task

@@ -1,0 +1,23 @@
+created: 2009-07-31 18:45:04.441853
+creator: Travis Parker <travis.parker@gmail.com>
+dependencies: null
+description: '22 depends on 23, yet:
+
+
+  bromium:~/projects/tkt> tkt
+
+  Unscheduled:
+
+  _ f #22: milestones plugin to supercede releases
+
+  _ t #23: subfolders of .tkt/
+
+  bromium:~/projects/tkt> tkt show 22'
+id: 4a739e20-2e4ea88e
+labels: null
+owner: null
+release: null
+resolution: null
+status: unstarted
+title: sorting by dependencies isn't happening in 'todo'
+type: bugfix

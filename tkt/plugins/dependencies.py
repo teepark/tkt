@@ -105,6 +105,7 @@ class Depend(tkt.commands.Command):
 
     def main(self):
         issue = self.gather_ticket(try_prompting=False)
+        issue.deps = get_dependencies(issue, sort=False)
 
         self.parsed_args.pop(0)
 
