@@ -1152,8 +1152,27 @@ class Upgrade(Command):
 
                 os.unlink(oldeventfile)
 
+    def point_four_upgrade(self):
+        issueid_regex = re.compile("[0-9a-f]{8}-[0-9a-f]{8}")
+
+        folders = glob.glob("%s%s*-*" % (tkt.config.datapath(), os.sep))
+
+        ticketsfolder = os.path.join(tkt.config.datapath(), "tickets")
+        if not os.path.exists(ticketsfolder):
+            os.makedirs(ticketsfolder)
+
+        for oldfold in folders:
+            newfold = os.path.join(ticketsfolder, os.path.basename(oldfold))
+            shutil.copytree(oldfold, newfold)
+
+        issuefiles = glob.glob(os.path.join(ticketsfolder, "*", "issue.yaml"))
+        for oldfile in issuefiles:
+            newfile = os.path.join(os.path.dirname(oldfile), "ticket.yaml")
+            shutil.copyfile(oldfile, newfile)
+
     upgrades = {
         '0.3': point_three_upgrade,
+        '0.4': point_four_upgrade,
     }
 
     def main(self):
