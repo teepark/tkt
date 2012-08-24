@@ -843,6 +843,9 @@ class Grep(Command):
 
     usageinfo = "search for tickets that match a regular expression"
 
+    path_regex = re.compile(r"([0-9a-f]{8}-[0-9a-f]{8})/" +
+            r"(ticket|[0-9a-f]{8}-[0-9a-f]{8})\.yaml")
+
     def main(self):
         if not (self.parsed_args and self.parsed_args[0]):
             self.fail("a regular expression argument required")
@@ -855,10 +858,7 @@ class Grep(Command):
         proc = subprocess.Popen(args, stdout=subprocess.PIPE)
         output = proc.communicate()[0]
 
-        print output
-
-        regex = re.compile("([0-9a-f]{32})/((issue)|([0-9a-f]{32}))\.yaml:")
-        matches = map(regex.search, output.splitlines())
+        matches = map(self.path_regex.search, output.splitlines())
         matches = set(match.groups()[0] for match in matches if match)
 
         #TODO: load only the ones we need
